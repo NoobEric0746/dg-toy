@@ -15,6 +15,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import org.nooberic.dg_toy.item.ModItems;
+import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -43,6 +44,7 @@ public class Dg_toy {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
+        event.enqueueWork(DgToyNetworking::register);
         LOGGER.info("DGToy common setup");
     }
 
