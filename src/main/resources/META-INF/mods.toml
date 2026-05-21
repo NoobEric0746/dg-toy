@@ -41,6 +41,13 @@ authors = "${mod_authors}" #optional
 # The description text for the mod (multi line!) (#mandatory)
 description = '''${mod_description}'''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
+[[dependencies."${mod_id}"]]
+modId = "dglib"
+mandatory = true
+versionRange = "[1.0-SNAPSHOT,)"
+ordering = "AFTER"
+side = "BOTH"
+
 [[dependencies."${mod_id}"]] #optional
 # the modid of the dependency
 modId = "forge" #mandatory
