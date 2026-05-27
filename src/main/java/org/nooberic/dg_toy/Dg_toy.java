@@ -29,7 +29,10 @@ public class Dg_toy {
             .withTabsBefore(CreativeModeTabs.TOOLS_AND_UTILITIES)
             .icon(() -> ModItems.POWERBOX.get().getDefaultInstance())
             .title(net.minecraft.network.chat.Component.translatable("itemGroup." + MODID + ".main"))
-            .displayItems((parameters, output) -> output.accept(ModItems.POWERBOX.get()))
+            .displayItems((parameters, output) -> {
+                output.accept(ModItems.POWERBOX.get());
+                output.accept(ModItems.REMOTE_CONTROL.get());
+            })
             .build());
 
     public Dg_toy() {

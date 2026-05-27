@@ -1,13 +1,12 @@
 package org.nooberic.dg_toy.client;
 
-import org.nooberic.dglib.service.ConnectionState;
-
 public record PlayerConnectionStatusSnapshot(
-        ConnectionState connectionState,
-        boolean paired,
+        boolean connected,
+        boolean virtuallyBound,
+        long pairingExpiresAtMs,
         long updatedAtMs
 ) {
     public static PlayerConnectionStatusSnapshot empty() {
-        return new PlayerConnectionStatusSnapshot(ConnectionState.DISCONNECTED, false, 0L);
+        return new PlayerConnectionStatusSnapshot(false, false, 0L, 0L);
     }
 }

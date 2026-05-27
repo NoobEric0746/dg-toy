@@ -33,10 +33,20 @@ public final class DgToyNetworking {
                 .consumerMainThread(DgToyS2CPlayerStatusSyncPacket::handle)
                 .add();
 
+        CHANNEL.messageBuilder(DgToyC2SConnectionStatusPacket.class, 1, NetworkDirection.PLAY_TO_SERVER)
+                .encoder(DgToyC2SConnectionStatusPacket::encode)
+                .decoder(DgToyC2SConnectionStatusPacket::decode)
+                .consumerMainThread(DgToyC2SConnectionStatusPacket::handle)
+                .add();
+
         registered = true;
     }
 
     public static void sendToPlayer(ServerPlayer player, Object packet) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), packet);
+    }
+
+    public static void sendToServer(Object packet) {
+        CHANNEL.sendToServer(packet);
     }
 }

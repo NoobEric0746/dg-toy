@@ -9,9 +9,6 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.nooberic.dg_toy.network.DgToyS2CPlayerStatusSyncPacket;
-import org.nooberic.dglib.multiplayer.CoyoteStatusSnapshot;
-import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
-import org.nooberic.dglib.service.ConnectionState;
 
 import java.util.Map;
 import java.util.UUID;
@@ -38,20 +35,26 @@ public final class PlayerStatusBroadcaster {
         tickCounter = 0;
 
         for (ServerPlayer player : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
-            DgServerCoyoteApi.get().requestStatus(player.getUUID())
-                    .thenAccept(snapshot -> broadcastIfChanged(player, snapshot))
-                    .exceptionally(ex -> null);
+            VirtualPairingManager.cleanupPlayerState(player);
+            broadcastIfChanged(player);
         }
     }
 
     @SubscribeEvent
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         LAST_SENT.remove(event.getEntity().getUUID());
+        if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            VirtualPairingManager.clearPlayer(serverPlayer.getUUID());
+            PlayerConnectionSyncManager.clear(serverPlayer.getUUID());
+        }
     }
 
-    private static void broadcastIfChanged(ServerPlayer sourcePlayer, CoyoteStatusSnapshot snapshot) {
-        ConnectionState connectionState = snapshot.isPaired() ? ConnectionState.PAIRED : deriveConnectionState(snapshot);
-        SentStatus newStatus = new SentStatus(connectionState, snapshot.isPaired());
+    private static void broadcastIfChanged(ServerPlayer sourcePlayer) {
+        boolean connected = PlayerConnectionSyncManager.isConnected(sourcePlayer.getUUID());
+        boolean virtuallyBound = VirtualPairingManager.isVirtuallyBound(sourcePlayer.getUUID());
+        long pairingExpiresAtMs = VirtualPairingManager.getPairingExpiresAt(sourcePlayer.getUUID());
+        long updatedAtMs = Math.max(PlayerConnectionSyncManager.getUpdatedAtMs(sourcePlayer.getUUID()), pairingExpiresAtMs);
+        SentStatus newStatus = new SentStatus(connected, virtuallyBound, pairingExpiresAtMs, updatedAtMs);
         SentStatus oldStatus = LAST_SENT.put(sourcePlayer.getUUID(), newStatus);
         if (newStatus.equals(oldStatus)) {
             return;
@@ -59,25 +62,16 @@ public final class PlayerStatusBroadcaster {
 
         DgToyS2CPlayerStatusSyncPacket packet = new DgToyS2CPlayerStatusSyncPacket(
                 sourcePlayer.getUUID(),
-                connectionState,
-                snapshot.isPaired(),
-                snapshot.getUpdatedAtMs()
+                connected,
+                virtuallyBound,
+                pairingExpiresAtMs,
+                updatedAtMs
         );
         for (ServerPlayer target : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
             DgToyNetworking.sendToPlayer(target, packet);
         }
     }
 
-    private static ConnectionState deriveConnectionState(CoyoteStatusSnapshot snapshot) {
-        if (!snapshot.getError().isEmpty()) {
-            return ConnectionState.DISCONNECTED;
-        }
-        if (snapshot.getUpdatedAtMs() > 0L) {
-            return ConnectionState.CONNECTED;
-        }
-        return ConnectionState.DISCONNECTED;
-    }
-
-    private record SentStatus(ConnectionState connectionState, boolean paired) {
+    private record SentStatus(boolean connected, boolean virtuallyBound, long pairingExpiresAtMs, long updatedAtMs) {
     }
 }

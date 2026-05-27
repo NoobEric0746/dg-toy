@@ -16,8 +16,6 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix4f;
 import org.nooberic.dg_toy.Dg_toy;
-import org.nooberic.dglib.api.DgLibApi;
-import org.nooberic.dglib.service.ConnectionState;
 
 @Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class PlayerStatusNameplateRenderer {
@@ -65,30 +63,24 @@ public final class PlayerStatusNameplateRenderer {
     }
 
     private static Component buildStatusLine(Player player, LocalPlayer localPlayer) {
-        ConnectionState connectionState;
-        boolean paired;
-
-        if (player == localPlayer) {
-            connectionState = DgLibApi.get().getConnectionState();
-            paired = DgLibApi.get().isPaired();
-        } else {
-            PlayerConnectionStatusSnapshot snapshot = PlayerStatusClientCache.get(player.getUUID());
-            connectionState = snapshot.connectionState();
-            paired = snapshot.paired();
-        }
+        PlayerConnectionStatusSnapshot snapshot = PlayerStatusClientCache.get(player.getUUID());
+        boolean connected = snapshot.connected();
+        boolean virtuallyBound = snapshot.virtuallyBound();
+        long pairingExpiresAtMs = snapshot.pairingExpiresAtMs();
 
         MutableComponent root = Component.empty();
-        //root.append(Component.literal("连接:").withStyle(ChatFormatting.WHITE));
-        root.append(Component.literal(isConnected(connectionState) ? "已连接" : "未连接")
-                .withStyle(isConnected(connectionState) ? ChatFormatting.GREEN : ChatFormatting.RED));
+        root.append(Component.literal(connected ? "已连接" : "未连接")
+                .withStyle(connected ? ChatFormatting.GREEN : ChatFormatting.RED));
         root.append(Component.literal("  ").withStyle(ChatFormatting.WHITE));
-        //root.append(Component.literal("配对:").withStyle(ChatFormatting.WHITE));
-        root.append(Component.literal(paired ? "已配对" : "未配对")
-                .withStyle(paired ? ChatFormatting.AQUA : ChatFormatting.GRAY));
+        root.append(buildVirtualPairingText(virtuallyBound, pairingExpiresAtMs));
         return root;
     }
 
-    private static boolean isConnected(ConnectionState connectionState) {
-        return connectionState == ConnectionState.CONNECTED || connectionState == ConnectionState.PAIRED;
+    private static Component buildVirtualPairingText(boolean virtuallyBound, long pairingExpiresAtMs) {
+        if (pairingExpiresAtMs > System.currentTimeMillis()) {
+            return Component.literal("配对中").withStyle(ChatFormatting.YELLOW);
+        }
+        return Component.literal(virtuallyBound ? "已配对" : "未配对")
+                .withStyle(virtuallyBound ? ChatFormatting.AQUA : ChatFormatting.GRAY);
     }
 }

@@ -1,7 +1,5 @@
 package org.nooberic.dg_toy.client;
 
-import org.nooberic.dglib.service.ConnectionState;
-
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,8 +14,8 @@ public final class PlayerStatusClientCache {
         return CACHE.getOrDefault(playerId, PlayerConnectionStatusSnapshot.empty());
     }
 
-    public static void put(UUID playerId, ConnectionState connectionState, boolean paired, long updatedAtMs) {
-        CACHE.put(playerId, new PlayerConnectionStatusSnapshot(connectionState, paired, updatedAtMs));
+    public static void put(UUID playerId, boolean connected, boolean virtuallyBound, long pairingExpiresAtMs, long updatedAtMs) {
+        CACHE.put(playerId, new PlayerConnectionStatusSnapshot(connected, virtuallyBound, pairingExpiresAtMs, updatedAtMs));
     }
 
     public static void remove(UUID playerId) {

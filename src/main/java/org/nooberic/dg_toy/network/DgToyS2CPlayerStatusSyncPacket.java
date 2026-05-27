@@ -4,36 +4,39 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 import org.nooberic.dg_toy.client.PlayerStatusClientCache;
-import org.nooberic.dglib.service.ConnectionState;
 
 import java.util.UUID;
 import java.util.function.Supplier;
 
 public class DgToyS2CPlayerStatusSyncPacket {
     private final UUID playerId;
-    private final ConnectionState connectionState;
-    private final boolean paired;
+    private final boolean connected;
+    private final boolean virtuallyBound;
+    private final long pairingExpiresAtMs;
     private final long updatedAtMs;
 
-    public DgToyS2CPlayerStatusSyncPacket(UUID playerId, ConnectionState connectionState, boolean paired, long updatedAtMs) {
+    public DgToyS2CPlayerStatusSyncPacket(UUID playerId, boolean connected, boolean virtuallyBound, long pairingExpiresAtMs, long updatedAtMs) {
         this.playerId = playerId;
-        this.connectionState = connectionState;
-        this.paired = paired;
+        this.connected = connected;
+        this.virtuallyBound = virtuallyBound;
+        this.pairingExpiresAtMs = pairingExpiresAtMs;
         this.updatedAtMs = updatedAtMs;
     }
 
     public static void encode(DgToyS2CPlayerStatusSyncPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.playerId);
-        buf.writeEnum(msg.connectionState);
-        buf.writeBoolean(msg.paired);
+        buf.writeBoolean(msg.connected);
+        buf.writeBoolean(msg.virtuallyBound);
+        buf.writeLong(msg.pairingExpiresAtMs);
         buf.writeLong(msg.updatedAtMs);
     }
 
     public static DgToyS2CPlayerStatusSyncPacket decode(FriendlyByteBuf buf) {
         return new DgToyS2CPlayerStatusSyncPacket(
                 buf.readUUID(),
-                buf.readEnum(ConnectionState.class),
                 buf.readBoolean(),
+                buf.readBoolean(),
+                buf.readLong(),
                 buf.readLong()
         );
     }
@@ -44,7 +47,7 @@ public class DgToyS2CPlayerStatusSyncPacket {
             if (Minecraft.getInstance().level == null) {
                 return;
             }
-            PlayerStatusClientCache.put(msg.playerId, msg.connectionState, msg.paired, msg.updatedAtMs);
+            PlayerStatusClientCache.put(msg.playerId, msg.connected, msg.virtuallyBound, msg.pairingExpiresAtMs, msg.updatedAtMs);
         });
         ctx.setPacketHandled(true);
     }
