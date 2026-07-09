@@ -39,6 +39,12 @@ public final class DgToyNetworking {
                 .consumerMainThread(DgToyC2SConnectionStatusPacket::handle)
                 .add();
 
+        CHANNEL.messageBuilder(DgToyC2SRemoteUnbindPacket.class, 2, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SRemoteUnbindPacket::encode)
+            .decoder(DgToyC2SRemoteUnbindPacket::decode)
+            .consumerMainThread(DgToyC2SRemoteUnbindPacket::handle)
+            .add();
+
         registered = true;
     }
 

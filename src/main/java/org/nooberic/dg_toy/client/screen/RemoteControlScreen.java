@@ -1,13 +1,31 @@
 package org.nooberic.dg_toy.client.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.nooberic.dg_toy.Dg_toy;
+import org.nooberic.dg_toy.client.PlayerConnectionStatusSnapshot;
+import org.nooberic.dg_toy.client.PlayerStatusClientCache;
+import org.nooberic.dg_toy.item.RemoteControlItem;
+import org.nooberic.dg_toy.network.DgToyC2SRemoteUnbindPacket;
+import org.nooberic.dg_toy.network.DgToyNetworking;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import static net.minecraft.ChatFormatting.GRAY;
+import static net.minecraft.ChatFormatting.GREEN;
+import static net.minecraft.ChatFormatting.YELLOW;
 
 @OnlyIn(Dist.CLIENT)
 public class RemoteControlScreen extends Screen {
@@ -68,6 +86,12 @@ public class RemoteControlScreen extends Screen {
     private static final int TIME_MINUS_Y = 82;
     private static final int SAVE_X = 13;
     private static final int SAVE_Y = 106;
+    private static final int STATUS_TEXT_X = 12;
+    private static final int STATUS_TEXT_Y = 7;
+    private static final int PULSE_TEXT_X = 13;
+    private static final int PULSE_TEXT_Y = 24;
+    private static final int PULSE_TEXT_WIDTH = 88;
+    private static final int PULSE_TEXT_HEIGHT = 8;
     private static final int TRACK_MIN_CENTER_X = 18;
     private static final int TRACK_MAX_CENTER_X = 70;
     private static final int TRACK_CENTER_Y = 45;
@@ -76,6 +100,8 @@ public class RemoteControlScreen extends Screen {
 
     private boolean hardMode = true;
     private int sliderCenterX = TRACK_MIN_CENTER_X;
+    private List<String> pulseIds = List.of();
+    private int selectedPulseIndex;
     private boolean draggingSlider;
     private boolean leftMouseDown;
 
@@ -86,8 +112,7 @@ public class RemoteControlScreen extends Screen {
     @Override
     protected void init() {
         super.init();
-        this.hardMode = true;
-        this.sliderCenterX = TRACK_MIN_CENTER_X;
+        loadStateFromHeldRemote();
         this.draggingSlider = false;
         this.leftMouseDown = false;
     }
@@ -109,8 +134,24 @@ public class RemoteControlScreen extends Screen {
         renderSaveButton(guiGraphics, left + SAVE_X, top + SAVE_Y, mouseX, mouseY);
         renderSlider(guiGraphics, left, top, mouseX, mouseY);
         RenderSystem.disableBlend();
+        renderConnectionText(guiGraphics, left, top);
+        renderPulseText(guiGraphics, left, top);
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        renderHoverTooltip(guiGraphics, mouseX, mouseY, left, top);
+    }
+
+    private void renderConnectionText(GuiGraphics guiGraphics, int left, int top) {
+        Component statusText = buildConnectionText();
+        guiGraphics.drawString(this.font, statusText, left + STATUS_TEXT_X, top + STATUS_TEXT_Y, 0xFFFFFF, false);
+    }
+
+    private void renderPulseText(GuiGraphics guiGraphics, int left, int top) {
+        String pulseId = getSelectedPulseId();
+        if (pulseId.isEmpty()) {
+            return;
+        }
+        guiGraphics.drawString(this.font, pulseId, left + PULSE_TEXT_X, top + PULSE_TEXT_Y, 0xFFFFFF, false);
     }
 
     private void renderStrengthBar(GuiGraphics guiGraphics, int left, int top) {
@@ -181,6 +222,18 @@ public class RemoteControlScreen extends Screen {
 
         if (isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, BUTTON_SIZE, BUTTON_SIZE)) {
             this.hardMode = !this.hardMode;
+            saveModeToHeldRemote();
+            return true;
+        }
+
+        if (isInside(mouseX, mouseY, left + UNBIND_X, top + UNBIND_Y, BUTTON_SIZE, BUTTON_SIZE)) {
+            ItemStack stack = getHeldRemoteStack();
+            if (!stack.isEmpty() && RemoteControlItem.isBound(stack)) {
+                DgToyNetworking.sendToServer(new DgToyC2SRemoteUnbindPacket());
+                if (this.minecraft != null) {
+                    this.minecraft.setScreen(null);
+                }
+            }
             return true;
         }
 
@@ -207,6 +260,7 @@ public class RemoteControlScreen extends Screen {
             if (this.draggingSlider) {
                 this.draggingSlider = false;
                 updateSlider(mouseX, leftPos());
+                saveStrengthToHeldRemote();
                 return true;
             }
         }
@@ -214,8 +268,26 @@ public class RemoteControlScreen extends Screen {
     }
 
     @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        int left = leftPos();
+        int top = topPos();
+        if (!isInside(mouseX, mouseY, left + PULSE_TEXT_X, top + PULSE_TEXT_Y, PULSE_TEXT_WIDTH, PULSE_TEXT_HEIGHT)) {
+            return super.mouseScrolled(mouseX, mouseY, delta);
+        }
+        if (this.pulseIds.isEmpty() || delta == 0) {
+            return true;
+        }
+
+        int direction = delta > 0 ? -1 : 1;
+        int size = this.pulseIds.size();
+        this.selectedPulseIndex = (this.selectedPulseIndex + direction + size) % size;
+        savePulseIdToHeldRemote();
+        return true;
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256) {
+        if (keyCode == 256 || this.minecraft != null && this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
             if (this.minecraft != null) {
                 this.minecraft.setScreen(null);
             }
@@ -242,6 +314,154 @@ public class RemoteControlScreen extends Screen {
         this.sliderCenterX = clamp(localX, TRACK_MIN_CENTER_X, TRACK_MAX_CENTER_X);
     }
 
+    private void renderHoverTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY, int left, int top) {
+        int sliderX = left + this.sliderCenterX - (SLIDER_WIDTH / 2) + SLIDER_RENDER_OFFSET_X;
+        int sliderY = top + TRACK_CENTER_Y - (SLIDER_HEIGHT / 2) + SLIDER_RENDER_OFFSET_Y;
+        if (isInside(mouseX, mouseY, sliderX, sliderY, SLIDER_WIDTH, SLIDER_HEIGHT)) {
+            guiGraphics.renderTooltip(this.font, Component.literal(String.valueOf(sliderXToStrength(this.sliderCenterX))), mouseX, mouseY);
+            return;
+        }
+
+        if (isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, BUTTON_SIZE, BUTTON_SIZE)) {
+            guiGraphics.renderTooltip(this.font, Component.translatable(this.hardMode ? "item.dg_toy.remote_control.mode.hard" : "item.dg_toy.remote_control.mode.soft"), mouseX, mouseY);
+            return;
+        }
+
+        if (isInside(mouseX, mouseY, left + UNBIND_X, top + UNBIND_Y, BUTTON_SIZE, BUTTON_SIZE)) {
+            guiGraphics.renderTooltip(this.font, Component.literal("断开连接"), mouseX, mouseY);
+            return;
+        }
+
+        if (isInside(mouseX, mouseY, left + PULSE_TEXT_X, top + PULSE_TEXT_Y, PULSE_TEXT_WIDTH, PULSE_TEXT_HEIGHT)) {
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("当前波形:"));
+            tooltip.add(Component.literal(getSelectedPulseId()));
+            tooltip.add(Component.literal("使用鼠标滚轮切换"));
+            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+        }
+    }
+
+    private Component buildConnectionText() {
+        ItemStack stack = getHeldRemoteStack();
+        if (stack.isEmpty() || !RemoteControlItem.isBound(stack)) {
+            return Component.literal("遥控器未连接玩家");
+        }
+
+        String playerName = RemoteControlItem.getBoundPlayerName(stack);
+        UUID playerId = RemoteControlItem.getBoundPlayerUuid(stack);
+        if (playerId == null) {
+            return Component.literal("遥控器未连接玩家");
+        }
+
+        boolean online = isPlayerOnline(playerId);
+        String safeName = playerName == null || playerName.isBlank() ? playerId.toString() : playerName;
+        return Component.literal("连接到")
+                .append(coloredPlayerName(safeName))
+                .append(Component.literal(online ? "在线" : "离线").withStyle(online ? GREEN : GRAY));
+    }
+
+    private boolean isPlayerOnline(UUID playerId) {
+        Minecraft minecraft = this.minecraft;
+        if (minecraft == null) {
+            return false;
+        }
+
+        LocalPlayer localPlayer = minecraft.player;
+        if (localPlayer != null && localPlayer.getUUID().equals(playerId)) {
+            return true;
+        }
+
+        PlayerConnectionStatusSnapshot snapshot = PlayerStatusClientCache.get(playerId);
+        return snapshot.connected() || minecraft.level != null && minecraft.level.getPlayerByUUID(playerId) != null;
+    }
+
+    private static MutableComponent coloredPlayerName(String playerName) {
+        return Component.literal(" " + playerName + " ").withStyle(YELLOW);
+    }
+
+    private void loadStateFromHeldRemote() {
+        ItemStack stack = getHeldRemoteStack();
+        this.hardMode = RemoteControlItem.isHardMode(stack);
+        this.sliderCenterX = strengthToSliderX(RemoteControlItem.getStrength(stack));
+        this.pulseIds = RemoteControlItem.getAvailablePulseIds();
+        String pulseId = RemoteControlItem.getPulseId(stack);
+        this.selectedPulseIndex = this.pulseIds.indexOf(pulseId);
+        if (this.selectedPulseIndex < 0) {
+            this.selectedPulseIndex = 0;
+            savePulseIdToHeldRemote();
+        }
+    }
+
+    private void saveStrengthToHeldRemote() {
+        ItemStack stack = getHeldRemoteStack();
+        if (stack.isEmpty()) {
+            return;
+        }
+        RemoteControlItem.setStrength(stack, sliderXToStrength(this.sliderCenterX));
+    }
+
+    private void saveModeToHeldRemote() {
+        ItemStack stack = getHeldRemoteStack();
+        if (stack.isEmpty()) {
+            return;
+        }
+        RemoteControlItem.setHardMode(stack, this.hardMode);
+    }
+
+    private void savePulseIdToHeldRemote() {
+        ItemStack stack = getHeldRemoteStack();
+        if (stack.isEmpty() || this.pulseIds.isEmpty()) {
+            return;
+        }
+        RemoteControlItem.setPulseId(stack, getSelectedPulseId());
+    }
+
+    private String getSelectedPulseId() {
+        if (this.pulseIds.isEmpty()) {
+            return "";
+        }
+        int index = clamp(this.selectedPulseIndex, 0, this.pulseIds.size() - 1);
+        return this.pulseIds.get(index);
+    }
+
+    private ItemStack getHeldRemoteStack() {
+        Minecraft minecraft = this.minecraft;
+        if (minecraft == null) {
+            return ItemStack.EMPTY;
+        }
+
+        Player player = minecraft.player;
+        if (player == null) {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack mainHand = player.getMainHandItem();
+        if (mainHand.getItem() instanceof RemoteControlItem) {
+            return mainHand;
+        }
+
+        ItemStack offHand = player.getOffhandItem();
+        if (offHand.getItem() instanceof RemoteControlItem) {
+            return offHand;
+        }
+
+        return ItemStack.EMPTY;
+    }
+
+    private static int sliderXToStrength(int sliderCenterX) {
+        int range = TRACK_MAX_CENTER_X - TRACK_MIN_CENTER_X;
+        if (range <= 0) {
+            return 0;
+        }
+        return Math.round((sliderCenterX - TRACK_MIN_CENTER_X) * 100.0F / range);
+    }
+
+    private static int strengthToSliderX(int strength) {
+        int clampedStrength = clamp(strength, 0, 100);
+        int range = TRACK_MAX_CENTER_X - TRACK_MIN_CENTER_X;
+        return TRACK_MIN_CENTER_X + Math.round(range * (clampedStrength / 100.0F));
+    }
+
     private int textureVForState(int mouseX, int mouseY, int x, int y, int width, int height, int normalV, int hoverV, int pressedV) {
         if (this.leftMouseDown && isInside(mouseX, mouseY, x, y, width, height)) {
             return pressedV;
@@ -266,15 +486,15 @@ public class RemoteControlScreen extends Screen {
         return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
     }
 
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     private int leftPos() {
         return (this.width - UI_WIDTH) / 2;
     }
 
     private int topPos() {
         return (this.height - UI_HEIGHT) / 2;
-    }
-
-    private static int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
     }
 }

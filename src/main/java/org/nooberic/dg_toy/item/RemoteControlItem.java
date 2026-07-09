@@ -18,6 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
+import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dg_toy.client.screen.RemoteControlScreen;
 import org.nooberic.dg_toy.server.PairingClearSavedData;
 import org.nooberic.dg_toy.server.PlayerConnectionSyncManager;
@@ -26,7 +27,9 @@ import org.nooberic.dg_toy.server.PlayerStatusBroadcaster;
 import org.nooberic.dg_toy.server.RemoteControlStateHelper;
 import org.nooberic.dg_toy.server.VirtualPairingManager;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static net.minecraft.ChatFormatting.YELLOW;
@@ -36,9 +39,21 @@ public class RemoteControlItem extends Item {
     private static final String BOUND_PLAYER_NAME_TAG = "BoundPlayerName";
     private static final String REMOTE_ID_TAG = "RemoteId";
     private static final String BOUND_TIME_TAG = "BoundTime";
+    private static final String STRENGTH_TAG = "Strength";
+    private static final String HARD_MODE_TAG = "HardMode";
+    private static final String PULSE_ID_TAG = "PulseId";
+    private static final int DEFAULT_STRENGTH = 0;
+    private static final boolean DEFAULT_HARD_MODE = true;
 
     public RemoteControlItem() {
         super(new Properties().stacksTo(1));
+    }
+
+    @Override
+    public ItemStack getDefaultInstance() {
+        ItemStack stack = super.getDefaultInstance();
+        ensureTag(stack);
+        return stack;
     }
 
     @Override
@@ -49,7 +64,7 @@ public class RemoteControlItem extends Item {
             return InteractionResultHolder.pass(itemStack);
         }
 
-        if (level.isClientSide && !player.isShiftKeyDown() && isBound(itemStack)) {
+        if (level.isClientSide && player.isShiftKeyDown()) {
             openScreen();
             return InteractionResultHolder.sidedSuccess(itemStack, true);
         }
@@ -59,7 +74,6 @@ public class RemoteControlItem extends Item {
 
             if (isBound(itemStack)) {
                 if (player.isShiftKeyDown()) {
-                    unbindFromPlayer(serverPlayer, itemStack);
                     return InteractionResultHolder.sidedSuccess(itemStack, false);
                 }
 
@@ -68,7 +82,7 @@ public class RemoteControlItem extends Item {
                     return InteractionResultHolder.sidedSuccess(itemStack, false);
                 }
 
-                return InteractionResultHolder.pass(itemStack);
+                return InteractionResultHolder.sidedSuccess(itemStack, false);
             }
 
             if (!player.isShiftKeyDown() && canSelfBind(player, itemStack) && PlayerPairingData.isBound(serverPlayer)) {
@@ -87,7 +101,7 @@ public class RemoteControlItem extends Item {
             }
         }
 
-        return InteractionResultHolder.pass(itemStack);
+        return InteractionResultHolder.sidedSuccess(itemStack, level.isClientSide);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -224,7 +238,7 @@ public class RemoteControlItem extends Item {
     }
 
     public static void bindToPlayer(ItemStack stack, UUID playerUuid, String playerName, long boundTime) {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = ensureTag(stack);
         tag.putUUID(BOUND_PLAYER_UUID_TAG, playerUuid);
         tag.putString(BOUND_PLAYER_NAME_TAG, playerName);
         tag.putLong(BOUND_TIME_TAG, boundTime);
@@ -252,8 +266,63 @@ public class RemoteControlItem extends Item {
         return tag.getLong(BOUND_TIME_TAG);
     }
 
+    public static int getStrength(ItemStack stack) {
+        CompoundTag tag = ensureTag(stack);
+        return clampStrength(tag.getInt(STRENGTH_TAG));
+    }
+
+    public static void setStrength(ItemStack stack, int strength) {
+        CompoundTag tag = ensureTag(stack);
+        tag.putInt(STRENGTH_TAG, clampStrength(strength));
+    }
+
+    public static boolean isHardMode(ItemStack stack) {
+        CompoundTag tag = ensureTag(stack);
+        return tag.getBoolean(HARD_MODE_TAG);
+    }
+
+    public static void setHardMode(ItemStack stack, boolean hardMode) {
+        CompoundTag tag = ensureTag(stack);
+        tag.putBoolean(HARD_MODE_TAG, hardMode);
+    }
+
+    public static String getPulseId(ItemStack stack) {
+        CompoundTag tag = ensureTag(stack);
+        String pulseId = tag.getString(PULSE_ID_TAG);
+        List<String> pulseIds = getAvailablePulseIds();
+        if (pulseIds.isEmpty()) {
+            if (tag.contains(PULSE_ID_TAG)) {
+                tag.remove(PULSE_ID_TAG);
+            }
+            return "";
+        }
+
+        if (!pulseIds.contains(pulseId)) {
+            pulseId = pulseIds.get(0);
+            tag.putString(PULSE_ID_TAG, pulseId);
+        }
+        return pulseId;
+    }
+
+    public static void setPulseId(ItemStack stack, String pulseId) {
+        CompoundTag tag = ensureTag(stack);
+        List<String> pulseIds = getAvailablePulseIds();
+        if (pulseIds.isEmpty()) {
+            tag.remove(PULSE_ID_TAG);
+            return;
+        }
+
+        String nextPulseId = pulseIds.contains(pulseId) ? pulseId : pulseIds.get(0);
+        tag.putString(PULSE_ID_TAG, nextPulseId);
+    }
+
+    public static List<String> getAvailablePulseIds() {
+        Map<String, org.nooberic.dglib.pulse.Pulse> pulseMap = DgLibApi.get().getAllPulses();
+        return new ArrayList<>(pulseMap.keySet());
+    }
+
     public static UUID getOrCreateRemoteId(ItemStack stack) {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = ensureTag(stack);
         if (!tag.hasUUID(REMOTE_ID_TAG)) {
             tag.putUUID(REMOTE_ID_TAG, UUID.randomUUID());
         }
@@ -268,7 +337,7 @@ public class RemoteControlItem extends Item {
         return Component.translatable("item.dg_toy.remote_control.unbound_by_remote", coloredPlayerNameFromNbt(playerName));
     }
 
-    private static void unbindFromPlayer(ServerPlayer actor, ItemStack stack) {
+    public static void unbindFromPlayer(ServerPlayer actor, ItemStack stack) {
         UUID boundPlayerId = getBoundPlayerUuid(stack);
         if (boundPlayerId == null) {
             unbind(stack);
@@ -297,5 +366,54 @@ public class RemoteControlItem extends Item {
             return Component.literal(name).setStyle(Style.EMPTY.withColor(YELLOW));
         }
         return Component.literal(" " + name + " ").setStyle(Style.EMPTY.withColor(YELLOW));
+    }
+
+    private static CompoundTag ensureTag(ItemStack stack) {
+        CompoundTag tag = stack.getTag();
+        if (tag == null) {
+            tag = new CompoundTag();
+            writeDefaultSettings(tag);
+            stack.setTag(tag);
+            return tag;
+        }
+
+        boolean updated = false;
+        if (!tag.contains(STRENGTH_TAG)) {
+            tag.putInt(STRENGTH_TAG, DEFAULT_STRENGTH);
+            updated = true;
+        }
+        if (!tag.contains(HARD_MODE_TAG)) {
+            tag.putBoolean(HARD_MODE_TAG, DEFAULT_HARD_MODE);
+            updated = true;
+        }
+        if (!tag.contains(PULSE_ID_TAG)) {
+            String defaultPulseId = getDefaultPulseId();
+            if (!defaultPulseId.isEmpty()) {
+                tag.putString(PULSE_ID_TAG, defaultPulseId);
+                updated = true;
+            }
+        }
+        if (updated) {
+            stack.setTag(tag);
+        }
+        return tag;
+    }
+
+    private static void writeDefaultSettings(CompoundTag tag) {
+        tag.putInt(STRENGTH_TAG, DEFAULT_STRENGTH);
+        tag.putBoolean(HARD_MODE_TAG, DEFAULT_HARD_MODE);
+        String defaultPulseId = getDefaultPulseId();
+        if (!defaultPulseId.isEmpty()) {
+            tag.putString(PULSE_ID_TAG, defaultPulseId);
+        }
+    }
+
+    private static String getDefaultPulseId() {
+        List<String> pulseIds = getAvailablePulseIds();
+        return pulseIds.isEmpty() ? "" : pulseIds.get(0);
+    }
+
+    private static int clampStrength(int strength) {
+        return Math.max(0, Math.min(100, strength));
     }
 }
