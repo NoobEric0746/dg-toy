@@ -20,6 +20,7 @@ import org.nooberic.dg_toy.network.DgToyC2SRemoteUnbindPacket;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.List;
 import java.util.UUID;
 
@@ -92,6 +93,8 @@ public class RemoteControlScreen extends Screen {
     private static final int PULSE_TEXT_Y = 24;
     private static final int PULSE_TEXT_WIDTH = 88;
     private static final int PULSE_TEXT_HEIGHT = 8;
+    private static final int DURATION_TEXT_X = 64;
+    private static final int DURATION_TEXT_Y = 73;
     private static final int TRACK_MIN_CENTER_X = 18;
     private static final int TRACK_MAX_CENTER_X = 70;
     private static final int TRACK_CENTER_Y = 45;
@@ -100,6 +103,7 @@ public class RemoteControlScreen extends Screen {
 
     private boolean hardMode = true;
     private int sliderCenterX = TRACK_MIN_CENTER_X;
+    private double duration = 1.0D;
     private List<String> pulseIds = List.of();
     private int selectedPulseIndex;
     private boolean draggingSlider;
@@ -136,6 +140,7 @@ public class RemoteControlScreen extends Screen {
         RenderSystem.disableBlend();
         renderConnectionText(guiGraphics, left, top);
         renderPulseText(guiGraphics, left, top);
+        renderDurationText(guiGraphics, left, top);
 
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderHoverTooltip(guiGraphics, mouseX, mouseY, left, top);
@@ -152,6 +157,10 @@ public class RemoteControlScreen extends Screen {
             return;
         }
         guiGraphics.drawString(this.font, pulseId, left + PULSE_TEXT_X, top + PULSE_TEXT_Y, 0xFFFFFF, false);
+    }
+
+    private void renderDurationText(GuiGraphics guiGraphics, int left, int top) {
+        guiGraphics.drawString(this.font, formatDuration(this.duration), left + DURATION_TEXT_X, top + DURATION_TEXT_Y, 0xFFFFFF, false);
     }
 
     private void renderStrengthBar(GuiGraphics guiGraphics, int left, int top) {
@@ -234,6 +243,16 @@ public class RemoteControlScreen extends Screen {
                     this.minecraft.setScreen(null);
                 }
             }
+            return true;
+        }
+
+        if (isInside(mouseX, mouseY, left + TIME_PLUS_X, top + TIME_PLUS_Y, TIME_WIDTH, TIME_HEIGHT)) {
+            changeDuration(true);
+            return true;
+        }
+
+        if (isInside(mouseX, mouseY, left + TIME_MINUS_X, top + TIME_MINUS_Y, TIME_WIDTH, TIME_HEIGHT)) {
+            changeDuration(false);
             return true;
         }
 
@@ -383,6 +402,7 @@ public class RemoteControlScreen extends Screen {
         ItemStack stack = getHeldRemoteStack();
         this.hardMode = RemoteControlItem.isHardMode(stack);
         this.sliderCenterX = strengthToSliderX(RemoteControlItem.getStrength(stack));
+        this.duration = RemoteControlItem.getDuration(stack);
         this.pulseIds = RemoteControlItem.getAvailablePulseIds();
         String pulseId = RemoteControlItem.getPulseId(stack);
         this.selectedPulseIndex = this.pulseIds.indexOf(pulseId);
@@ -416,12 +436,44 @@ public class RemoteControlScreen extends Screen {
         RemoteControlItem.setPulseId(stack, getSelectedPulseId());
     }
 
+    private void saveDurationToHeldRemote() {
+        ItemStack stack = getHeldRemoteStack();
+        if (stack.isEmpty()) {
+            return;
+        }
+        RemoteControlItem.setDuration(stack, this.duration);
+    }
+
+    private void changeDuration(boolean increase) {
+        if (increase) {
+            if (this.duration < 1.0D) {
+                this.duration = 1.0D;
+            } else {
+                this.duration = Math.min(10.0D, this.duration + 1.0D);
+            }
+        } else {
+            if (this.duration <= 1.0D) {
+                this.duration = this.duration <= 0.5D ? 0.5D : 0.5D;
+            } else {
+                this.duration = Math.max(1.0D, this.duration - 1.0D);
+            }
+        }
+        saveDurationToHeldRemote();
+    }
+
     private String getSelectedPulseId() {
         if (this.pulseIds.isEmpty()) {
             return "";
         }
         int index = clamp(this.selectedPulseIndex, 0, this.pulseIds.size() - 1);
         return this.pulseIds.get(index);
+    }
+
+    private static String formatDuration(double duration) {
+        if (Math.abs(duration - Math.rint(duration)) < 0.0001D) {
+            return Integer.toString((int) Math.rint(duration));
+        }
+        return String.format(Locale.ROOT, "%.1f", duration);
     }
 
     private ItemStack getHeldRemoteStack() {

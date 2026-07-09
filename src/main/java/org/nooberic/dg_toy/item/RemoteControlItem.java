@@ -42,8 +42,10 @@ public class RemoteControlItem extends Item {
     private static final String STRENGTH_TAG = "Strength";
     private static final String HARD_MODE_TAG = "HardMode";
     private static final String PULSE_ID_TAG = "PulseId";
+    private static final String DURATION_TAG = "Duration";
     private static final int DEFAULT_STRENGTH = 0;
     private static final boolean DEFAULT_HARD_MODE = true;
+    private static final double DEFAULT_DURATION = 1.0D;
 
     public RemoteControlItem() {
         super(new Properties().stacksTo(1));
@@ -316,6 +318,16 @@ public class RemoteControlItem extends Item {
         tag.putString(PULSE_ID_TAG, nextPulseId);
     }
 
+    public static double getDuration(ItemStack stack) {
+        CompoundTag tag = ensureTag(stack);
+        return clampDuration(tag.getDouble(DURATION_TAG));
+    }
+
+    public static void setDuration(ItemStack stack, double duration) {
+        CompoundTag tag = ensureTag(stack);
+        tag.putDouble(DURATION_TAG, clampDuration(duration));
+    }
+
     public static List<String> getAvailablePulseIds() {
         Map<String, org.nooberic.dglib.pulse.Pulse> pulseMap = DgLibApi.get().getAllPulses();
         return new ArrayList<>(pulseMap.keySet());
@@ -393,6 +405,10 @@ public class RemoteControlItem extends Item {
                 updated = true;
             }
         }
+        if (!tag.contains(DURATION_TAG)) {
+            tag.putDouble(DURATION_TAG, DEFAULT_DURATION);
+            updated = true;
+        }
         if (updated) {
             stack.setTag(tag);
         }
@@ -406,6 +422,7 @@ public class RemoteControlItem extends Item {
         if (!defaultPulseId.isEmpty()) {
             tag.putString(PULSE_ID_TAG, defaultPulseId);
         }
+        tag.putDouble(DURATION_TAG, DEFAULT_DURATION);
     }
 
     private static String getDefaultPulseId() {
@@ -415,5 +432,12 @@ public class RemoteControlItem extends Item {
 
     private static int clampStrength(int strength) {
         return Math.max(0, Math.min(100, strength));
+    }
+
+    private static double clampDuration(double duration) {
+        if (duration <= 0.5D) {
+            return 0.5D;
+        }
+        return Math.max(1.0D, Math.min(10.0D, Math.rint(duration)));
     }
 }
