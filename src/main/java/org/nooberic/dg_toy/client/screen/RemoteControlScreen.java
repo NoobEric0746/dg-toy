@@ -16,6 +16,8 @@ import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.client.PlayerConnectionStatusSnapshot;
 import org.nooberic.dg_toy.client.PlayerStatusClientCache;
 import org.nooberic.dg_toy.item.RemoteControlItem;
+import org.nooberic.dg_toy.network.DgToyC2SRemoteSettingsSyncPacket;
+import org.nooberic.dg_toy.network.DgToyC2SRemoteShockPacket;
 import org.nooberic.dg_toy.network.DgToyC2SRemoteUnbindPacket;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 
@@ -256,6 +258,14 @@ public class RemoteControlScreen extends Screen {
             return true;
         }
 
+        if (isInside(mouseX, mouseY, left + SHOCK_X, top + SHOCK_Y, SHOCK_WIDTH, SHOCK_HEIGHT)) {
+            ItemStack stack = getHeldRemoteStack();
+            if (!stack.isEmpty() && RemoteControlItem.isBound(stack)) {
+                DgToyNetworking.sendToServer(new DgToyC2SRemoteShockPacket());
+            }
+            return true;
+        }
+
         if (isRegularButton(mouseX, mouseY, left, top)) {
             return true;
         }
@@ -418,6 +428,7 @@ public class RemoteControlScreen extends Screen {
             return;
         }
         RemoteControlItem.setStrength(stack, sliderXToStrength(this.sliderCenterX));
+        syncHeldRemoteSettings();
     }
 
     private void saveModeToHeldRemote() {
@@ -426,6 +437,7 @@ public class RemoteControlScreen extends Screen {
             return;
         }
         RemoteControlItem.setHardMode(stack, this.hardMode);
+        syncHeldRemoteSettings();
     }
 
     private void savePulseIdToHeldRemote() {
@@ -434,6 +446,7 @@ public class RemoteControlScreen extends Screen {
             return;
         }
         RemoteControlItem.setPulseId(stack, getSelectedPulseId());
+        syncHeldRemoteSettings();
     }
 
     private void saveDurationToHeldRemote() {
@@ -442,6 +455,20 @@ public class RemoteControlScreen extends Screen {
             return;
         }
         RemoteControlItem.setDuration(stack, this.duration);
+        syncHeldRemoteSettings();
+    }
+
+    private void syncHeldRemoteSettings() {
+        ItemStack stack = getHeldRemoteStack();
+        if (stack.isEmpty()) {
+            return;
+        }
+        DgToyNetworking.sendToServer(new DgToyC2SRemoteSettingsSyncPacket(
+                RemoteControlItem.getStrength(stack),
+                RemoteControlItem.isHardMode(stack),
+                RemoteControlItem.getPulseId(stack),
+                RemoteControlItem.getDuration(stack)
+        ));
     }
 
     private void changeDuration(boolean increase) {

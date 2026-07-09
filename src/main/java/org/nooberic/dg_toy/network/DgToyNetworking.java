@@ -45,6 +45,18 @@ public final class DgToyNetworking {
             .consumerMainThread(DgToyC2SRemoteUnbindPacket::handle)
             .add();
 
+        CHANNEL.messageBuilder(DgToyC2SRemoteShockPacket.class, 3, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SRemoteShockPacket::encode)
+            .decoder(DgToyC2SRemoteShockPacket::decode)
+            .consumerMainThread(DgToyC2SRemoteShockPacket::handle)
+            .add();
+
+        CHANNEL.messageBuilder(DgToyC2SRemoteSettingsSyncPacket.class, 4, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SRemoteSettingsSyncPacket::encode)
+            .decoder(DgToyC2SRemoteSettingsSyncPacket::decode)
+            .consumerMainThread(DgToyC2SRemoteSettingsSyncPacket::handle)
+            .add();
+
         registered = true;
     }
 
