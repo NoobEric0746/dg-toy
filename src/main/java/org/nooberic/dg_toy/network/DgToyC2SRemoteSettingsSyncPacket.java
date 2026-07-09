@@ -13,9 +13,9 @@ public class DgToyC2SRemoteSettingsSyncPacket {
     private final int strength;
     private final boolean hardMode;
     private final String pulseId;
-    private final double duration;
+    private final int duration;
 
-    public DgToyC2SRemoteSettingsSyncPacket(int strength, boolean hardMode, String pulseId, double duration) {
+    public DgToyC2SRemoteSettingsSyncPacket(int strength, boolean hardMode, String pulseId, int duration) {
         this.strength = strength;
         this.hardMode = hardMode;
         this.pulseId = pulseId;
@@ -26,11 +26,11 @@ public class DgToyC2SRemoteSettingsSyncPacket {
         buf.writeInt(msg.strength);
         buf.writeBoolean(msg.hardMode);
         buf.writeUtf(msg.pulseId);
-        buf.writeDouble(msg.duration);
+        buf.writeInt(msg.duration);
     }
 
     public static DgToyC2SRemoteSettingsSyncPacket decode(FriendlyByteBuf buf) {
-        return new DgToyC2SRemoteSettingsSyncPacket(buf.readInt(), buf.readBoolean(), buf.readUtf(), buf.readDouble());
+        return new DgToyC2SRemoteSettingsSyncPacket(buf.readInt(), buf.readBoolean(), buf.readUtf(), buf.readInt());
     }
 
     public static void handle(DgToyC2SRemoteSettingsSyncPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {

@@ -105,7 +105,7 @@ public class RemoteControlScreen extends Screen {
 
     private boolean hardMode = true;
     private int sliderCenterX = TRACK_MIN_CENTER_X;
-    private double duration = 1.0D;
+    private int duration = 1;
     private List<String> pulseIds = List.of();
     private int selectedPulseIndex;
     private boolean draggingSlider;
@@ -473,17 +473,9 @@ public class RemoteControlScreen extends Screen {
 
     private void changeDuration(boolean increase) {
         if (increase) {
-            if (this.duration < 1.0D) {
-                this.duration = 1.0D;
-            } else {
-                this.duration = Math.min(10.0D, this.duration + 1.0D);
-            }
+            this.duration = Math.min(10, Math.max(1, this.duration) + 1);
         } else {
-            if (this.duration <= 1.0D) {
-                this.duration = this.duration <= 0.5D ? 0.5D : 0.5D;
-            } else {
-                this.duration = Math.max(1.0D, this.duration - 1.0D);
-            }
+            this.duration = Math.max(1, this.duration - 1);
         }
         saveDurationToHeldRemote();
     }
@@ -496,11 +488,8 @@ public class RemoteControlScreen extends Screen {
         return this.pulseIds.get(index);
     }
 
-    private static String formatDuration(double duration) {
-        if (Math.abs(duration - Math.rint(duration)) < 0.0001D) {
-            return Integer.toString((int) Math.rint(duration));
-        }
-        return String.format(Locale.ROOT, "%.1f", duration);
+    private static String formatDuration(int duration) {
+        return Integer.toString(duration);
     }
 
     private ItemStack getHeldRemoteStack() {

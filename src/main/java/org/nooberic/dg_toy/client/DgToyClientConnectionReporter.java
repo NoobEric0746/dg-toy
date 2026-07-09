@@ -10,6 +10,7 @@ import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.network.DgToyC2SConnectionStatusPacket;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.nooberic.dglib.api.DgLibApi;
+import org.nooberic.dglib.service.DeviceStatus;
 
 @Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public final class DgToyClientConnectionReporter {
@@ -19,6 +20,15 @@ public final class DgToyClientConnectionReporter {
     private static long lastSyncAtMs = 0L;
 
     private DgToyClientConnectionReporter() {
+    }
+
+    private static boolean isConnectedToLocalCoyoteHost() {
+        DeviceStatus status = DgLibApi.get().getStatus();
+        return status != null
+                && status.getClientId() != null
+                && !status.getClientId().isEmpty()
+                && status.getTargetId() != null
+                && !status.getTargetId().isEmpty();
     }
 
     @SubscribeEvent
@@ -45,7 +55,7 @@ public final class DgToyClientConnectionReporter {
             return;
         }
 
-        boolean connected = DgLibApi.get().isPaired();
+        boolean connected = isConnectedToLocalCoyoteHost();
         long now = System.currentTimeMillis();
         if (connected != lastConnected || now - lastSyncAtMs >= SYNC_INTERVAL_MS) {
             syncState(connected);
@@ -53,7 +63,7 @@ public final class DgToyClientConnectionReporter {
     }
 
     public static void syncNow() {
-        syncState(DgLibApi.get().isPaired());
+        syncState(isConnectedToLocalCoyoteHost());
     }
 
     public static void syncState(boolean connected) {

@@ -44,7 +44,7 @@ description = '''${mod_description}'''
 [[dependencies."${mod_id}"]]
 modId = "dglib"
 mandatory = true
-versionRange = "[1.0-SNAPSHOT,)"
+versionRange = "[1.1-SNAPSHOT,)"
 ordering = "AFTER"
 side = "BOTH"
 

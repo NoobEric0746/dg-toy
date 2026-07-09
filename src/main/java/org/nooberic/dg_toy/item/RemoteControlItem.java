@@ -45,7 +45,7 @@ public class RemoteControlItem extends Item {
     private static final String DURATION_TAG = "Duration";
     private static final int DEFAULT_STRENGTH = 0;
     private static final boolean DEFAULT_HARD_MODE = true;
-    private static final double DEFAULT_DURATION = 1.0D;
+    private static final int DEFAULT_DURATION = 1;
 
     public RemoteControlItem() {
         super(new Properties().stacksTo(1));
@@ -318,14 +318,14 @@ public class RemoteControlItem extends Item {
         tag.putString(PULSE_ID_TAG, nextPulseId);
     }
 
-    public static double getDuration(ItemStack stack) {
+    public static int getDuration(ItemStack stack) {
         CompoundTag tag = ensureTag(stack);
-        return clampDuration(tag.getDouble(DURATION_TAG));
+        return clampDuration(tag.getInt(DURATION_TAG));
     }
 
-    public static void setDuration(ItemStack stack, double duration) {
+    public static void setDuration(ItemStack stack, int duration) {
         CompoundTag tag = ensureTag(stack);
-        tag.putDouble(DURATION_TAG, clampDuration(duration));
+        tag.putInt(DURATION_TAG, clampDuration(duration));
     }
 
     public static List<String> getAvailablePulseIds() {
@@ -406,7 +406,7 @@ public class RemoteControlItem extends Item {
             }
         }
         if (!tag.contains(DURATION_TAG)) {
-            tag.putDouble(DURATION_TAG, DEFAULT_DURATION);
+            tag.putInt(DURATION_TAG, DEFAULT_DURATION);
             updated = true;
         }
         if (updated) {
@@ -422,7 +422,7 @@ public class RemoteControlItem extends Item {
         if (!defaultPulseId.isEmpty()) {
             tag.putString(PULSE_ID_TAG, defaultPulseId);
         }
-        tag.putDouble(DURATION_TAG, DEFAULT_DURATION);
+        tag.putInt(DURATION_TAG, DEFAULT_DURATION);
     }
 
     private static String getDefaultPulseId() {
@@ -434,10 +434,7 @@ public class RemoteControlItem extends Item {
         return Math.max(0, Math.min(100, strength));
     }
 
-    private static double clampDuration(double duration) {
-        if (duration <= 0.5D) {
-            return 0.5D;
-        }
-        return Math.max(1.0D, Math.min(10.0D, Math.rint(duration)));
+    private static int clampDuration(int duration) {
+        return Math.max(1, Math.min(10, duration));
     }
 }

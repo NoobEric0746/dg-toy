@@ -13,6 +13,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
 import org.nooberic.dg_toy.server.PairingClearSavedData;
+import org.nooberic.dg_toy.server.PlayerConnectionSyncManager;
 import org.nooberic.dg_toy.server.PlayerPairingData;
 import org.nooberic.dg_toy.server.PlayerStatusBroadcaster;
 import org.nooberic.dg_toy.server.RemoteControlStateHelper;
@@ -48,7 +49,7 @@ public class PowerboxItem extends Item {
                 return new InteractionResultHolder<>(InteractionResult.CONSUME, itemStack);
             }
 
-            if (!DgLibApi.get().isPaired()) {
+            if (!PlayerConnectionSyncManager.isConnected(serverPlayer.getUUID())) {
                 serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.powerbox.not_connected"), true);
                 return new InteractionResultHolder<>(InteractionResult.CONSUME, itemStack);
             }

@@ -47,7 +47,7 @@ public class DgToyC2SRemoteShockPacket {
             }
 
             int strength = RemoteControlItem.getStrength(stack);
-            double duration = RemoteControlItem.getDuration(stack);
+            int duration = RemoteControlItem.getDuration(stack);
             ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(targetPlayer);
             coyote.control(3, strength, pulseId, duration);
         });
