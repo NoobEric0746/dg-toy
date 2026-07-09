@@ -1,5 +1,6 @@
 package org.nooberic.dg_toy.item;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -14,7 +15,10 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
+import org.nooberic.dg_toy.client.screen.RemoteControlScreen;
 import org.nooberic.dg_toy.server.PairingClearSavedData;
 import org.nooberic.dg_toy.server.PlayerConnectionSyncManager;
 import org.nooberic.dg_toy.server.PlayerPairingData;
@@ -43,6 +47,11 @@ public class RemoteControlItem extends Item {
 
         if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResultHolder.pass(itemStack);
+        }
+
+        if (level.isClientSide && !player.isShiftKeyDown() && isBound(itemStack)) {
+            openScreen();
+            return InteractionResultHolder.sidedSuccess(itemStack, true);
         }
 
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
@@ -79,6 +88,12 @@ public class RemoteControlItem extends Item {
         }
 
         return InteractionResultHolder.pass(itemStack);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void openScreen() {
+        Minecraft minecraft = Minecraft.getInstance();
+        minecraft.setScreen(new RemoteControlScreen());
     }
 
     @Override
