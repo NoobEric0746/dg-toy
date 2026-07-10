@@ -57,6 +57,12 @@ public final class DgToyNetworking {
             .consumerMainThread(DgToyC2SRemoteSettingsSyncPacket::handle)
             .add();
 
+        CHANNEL.messageBuilder(DgToyC2SRemoteSavePresetPacket.class, 5, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SRemoteSavePresetPacket::encode)
+            .decoder(DgToyC2SRemoteSavePresetPacket::decode)
+            .consumerMainThread(DgToyC2SRemoteSavePresetPacket::handle)
+            .add();
+
         registered = true;
     }
 

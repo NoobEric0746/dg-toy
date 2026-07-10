@@ -17,6 +17,7 @@ import org.nooberic.dg_toy.client.PlayerConnectionStatusSnapshot;
 import org.nooberic.dg_toy.client.PlayerStatusClientCache;
 import org.nooberic.dg_toy.item.RemoteControlItem;
 import org.nooberic.dg_toy.network.DgToyC2SRemoteSettingsSyncPacket;
+import org.nooberic.dg_toy.network.DgToyC2SRemoteSavePresetPacket;
 import org.nooberic.dg_toy.network.DgToyC2SRemoteShockPacket;
 import org.nooberic.dg_toy.network.DgToyC2SRemoteUnbindPacket;
 import org.nooberic.dg_toy.network.DgToyNetworking;
@@ -292,6 +293,15 @@ public class RemoteControlScreen extends Screen {
             return true;
         }
 
+        if (isInside(mouseX, mouseY, left + SAVE_X, top + SAVE_Y, SAVE_WIDTH, SAVE_HEIGHT)) {
+            ItemStack stack = getHeldRemoteStack();
+            if (!stack.isEmpty()) {
+                RemoteControlItem.saveCurrentShockPreset(stack);
+                DgToyNetworking.sendToServer(new DgToyC2SRemoteSavePresetPacket());
+            }
+            return true;
+        }
+
         if (isRegularButton(mouseX, mouseY, left, top)) {
             return true;
         }
@@ -409,6 +419,22 @@ public class RemoteControlScreen extends Screen {
             tooltip.add(Component.literal("当前波形:"));
             tooltip.add(Component.literal(getSelectedPulseId()));
             tooltip.add(Component.literal("使用鼠标滚轮切换"));
+            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+            return;
+        }
+
+        if (isInside(mouseX, mouseY, left + SAVE_X, top + SAVE_Y, SAVE_WIDTH, SAVE_HEIGHT)) {
+            List<Component> tooltip = new ArrayList<>();
+            tooltip.add(Component.literal("保存到快捷触发"));
+            tooltip.add(Component.literal("保存后可以手持遥控器右键来直接触发电击"));
+            tooltip.add(Component.literal("当前保存的方案:"));
+            ItemStack stack = getHeldRemoteStack();
+            if (stack.isEmpty() || !RemoteControlItem.hasSavedShockPreset(stack)) {
+                tooltip.add(Component.literal("无"));
+            } else {
+                tooltip.add(Component.literal("强度:" + RemoteControlItem.getSavedShockStrength(stack) + "(" + modeLabel(RemoteControlItem.isSavedShockHardMode(stack)) + "),通道:" + channelLabel(RemoteControlItem.getSavedShockChannel(stack)) + ",时长:" + formatDuration(RemoteControlItem.getSavedShockDuration(stack))));
+                tooltip.add(Component.literal("波形:" + RemoteControlItem.getSavedShockPulseId(stack)));
+            }
             guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
         }
     }
@@ -562,6 +588,10 @@ public class RemoteControlScreen extends Screen {
             case 3 -> "A+B";
             default -> "A";
         };
+    }
+
+    private static String modeLabel(boolean hardMode) {
+        return hardMode ? "数值" : "动态";
     }
 
     private ItemStack getHeldRemoteStack() {

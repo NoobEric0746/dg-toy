@@ -44,6 +44,7 @@ public class RemoteControlItem extends Item {
     private static final String PULSE_ID_TAG = "PulseId";
     private static final String DURATION_TAG = "Duration";
     private static final String CHANNEL_TAG = "Channel";
+    private static final String SAVED_SHOCK_TAG = "SavedShock";
     private static final int DEFAULT_STRENGTH = 0;
     private static final boolean DEFAULT_HARD_MODE = true;
     private static final int DEFAULT_DURATION = 1;
@@ -78,6 +79,10 @@ public class RemoteControlItem extends Item {
 
             if (isBound(itemStack)) {
                 if (player.isShiftKeyDown()) {
+                    return InteractionResultHolder.sidedSuccess(itemStack, false);
+                }
+
+                if (triggerSavedShock(serverPlayer, itemStack)) {
                     return InteractionResultHolder.sidedSuccess(itemStack, false);
                 }
 
@@ -340,8 +345,66 @@ public class RemoteControlItem extends Item {
         tag.putInt(CHANNEL_TAG, clampChannel(channel));
     }
 
+    public static void saveCurrentShockPreset(ItemStack stack) {
+        CompoundTag tag = ensureTag(stack);
+        CompoundTag savedTag = new CompoundTag();
+        savedTag.putInt(STRENGTH_TAG, getStrength(stack));
+        savedTag.putBoolean(HARD_MODE_TAG, isHardMode(stack));
+        savedTag.putString(PULSE_ID_TAG, getPulseId(stack));
+        savedTag.putInt(DURATION_TAG, getDuration(stack));
+        savedTag.putInt(CHANNEL_TAG, getChannel(stack));
+        tag.put(SAVED_SHOCK_TAG, savedTag);
+    }
+
+    public static boolean hasSavedShockPreset(ItemStack stack) {
+        CompoundTag tag = stack.getTag();
+        return tag != null && tag.contains(SAVED_SHOCK_TAG, CompoundTag.TAG_COMPOUND);
+    }
+
+    @Nullable
+    public static CompoundTag getSavedShockPreset(ItemStack stack) {
+        CompoundTag tag = stack.getTag();
+        if (tag == null || !tag.contains(SAVED_SHOCK_TAG, CompoundTag.TAG_COMPOUND)) {
+            return null;
+        }
+        return tag.getCompound(SAVED_SHOCK_TAG).copy();
+    }
+
+    public static int getSavedShockStrength(ItemStack stack) {
+        CompoundTag preset = getSavedShockPreset(stack);
+        return preset == null ? DEFAULT_STRENGTH : clampStrength(preset.getInt(STRENGTH_TAG));
+    }
+
+    public static boolean isSavedShockHardMode(ItemStack stack) {
+        CompoundTag preset = getSavedShockPreset(stack);
+        return preset == null ? DEFAULT_HARD_MODE : preset.getBoolean(HARD_MODE_TAG);
+    }
+
+    public static String getSavedShockPulseId(ItemStack stack) {
+        CompoundTag preset = getSavedShockPreset(stack);
+        if (preset == null) {
+            return "";
+        }
+        String pulseId = preset.getString(PULSE_ID_TAG);
+        List<String> pulseIds = getAvailablePulseIds();
+        if (pulseIds.isEmpty()) {
+            return "";
+        }
+        return pulseIds.contains(pulseId) ? pulseId : pulseIds.get(0);
+    }
+
+    public static int getSavedShockDuration(ItemStack stack) {
+        CompoundTag preset = getSavedShockPreset(stack);
+        return preset == null ? DEFAULT_DURATION : clampDuration(preset.getInt(DURATION_TAG));
+    }
+
+    public static int getSavedShockChannel(ItemStack stack) {
+        CompoundTag preset = getSavedShockPreset(stack);
+        return preset == null ? DEFAULT_CHANNEL : clampChannel(preset.getInt(CHANNEL_TAG));
+    }
+
     public static List<String> getAvailablePulseIds() {
-        Map<String, org.nooberic.dglib.pulse.Pulse> pulseMap = DgLibApi.get().getAllPulses();
+        Map<String, org.nooberic.dglib.pulse.RegisteredPulse> pulseMap = DgLibApi.get().getAllPulses();
         return new ArrayList<>(pulseMap.keySet());
     }
 
@@ -390,6 +453,38 @@ public class RemoteControlItem extends Item {
             return Component.literal(name).setStyle(Style.EMPTY.withColor(YELLOW));
         }
         return Component.literal(" " + name + " ").setStyle(Style.EMPTY.withColor(YELLOW));
+    }
+
+    private static boolean triggerSavedShock(ServerPlayer sender, ItemStack stack) {
+        if (!hasSavedShockPreset(stack)) {
+            return false;
+        }
+
+        UUID boundPlayerId = getBoundPlayerUuid(stack);
+        if (boundPlayerId == null) {
+            return false;
+        }
+
+        ServerPlayer targetPlayer = RemoteControlStateHelper.findOnlinePlayer(boundPlayerId);
+        if (targetPlayer == null) {
+            return false;
+        }
+
+        String pulseId = getSavedShockPulseId(stack);
+        if (pulseId.isEmpty()) {
+            return false;
+        }
+
+        org.nooberic.dglib.multiplayer.ServerCoyote coyote = org.nooberic.dglib.multiplayer.DgServerCoyoteApi.get().getCoyote(targetPlayer);
+        int channel = getSavedShockChannel(stack);
+        int strength = getSavedShockStrength(stack);
+        int duration = getSavedShockDuration(stack);
+        if (isSavedShockHardMode(stack)) {
+            coyote.control(channel, strength, pulseId, duration);
+        } else {
+            coyote.controlSoft(channel, strength, pulseId, duration);
+        }
+        return true;
     }
 
     private static CompoundTag ensureTag(ItemStack stack) {
