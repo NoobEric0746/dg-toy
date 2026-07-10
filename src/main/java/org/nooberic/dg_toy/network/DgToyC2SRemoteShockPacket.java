@@ -49,8 +49,13 @@ public class DgToyC2SRemoteShockPacket {
             int strength = RemoteControlItem.getStrength(stack);
             int duration = RemoteControlItem.getDuration(stack);
             int channel = RemoteControlItem.getChannel(stack);
+            boolean hardMode = RemoteControlItem.isHardMode(stack);
             ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(targetPlayer);
-            coyote.control(channel, strength, pulseId, duration);
+            if (hardMode) {
+                coyote.control(channel, strength, pulseId, duration);
+            } else {
+                coyote.controlSoft(channel, strength, pulseId, duration);
+            }
         });
         ctx.setPacketHandled(true);
     }

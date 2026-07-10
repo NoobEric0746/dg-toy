@@ -379,7 +379,18 @@ public class RemoteControlScreen extends Screen {
         }
 
         if (isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, BUTTON_SIZE, BUTTON_SIZE)) {
-            guiGraphics.renderTooltip(this.font, Component.translatable(this.hardMode ? "item.dg_toy.remote_control.mode.hard" : "item.dg_toy.remote_control.mode.soft"), mouseX, mouseY);
+            List<Component> tooltip = new ArrayList<>();
+            if (this.hardMode) {
+                tooltip.add(Component.literal("数值强度模式"));
+                tooltip.add(Component.literal("产生的强度等于设置的数值"));
+            } else {
+                tooltip.add(Component.literal("动态强度模式"));
+                tooltip.add(Component.literal("0-33按比例对应感受阈值以下"));
+                tooltip.add(Component.literal("34-66对应感受阈值到疼痛阈值,适合用于奖励"));
+                tooltip.add(Component.literal("67-100对应疼痛阈值到强度上限,适合用于惩罚"));
+                tooltip.add(Component.literal("需要对方提前设置相应数值"));
+            }
+            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
             return;
         }
 
