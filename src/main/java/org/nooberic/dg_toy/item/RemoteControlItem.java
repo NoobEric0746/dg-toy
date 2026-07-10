@@ -43,9 +43,11 @@ public class RemoteControlItem extends Item {
     private static final String HARD_MODE_TAG = "HardMode";
     private static final String PULSE_ID_TAG = "PulseId";
     private static final String DURATION_TAG = "Duration";
+    private static final String CHANNEL_TAG = "Channel";
     private static final int DEFAULT_STRENGTH = 0;
     private static final boolean DEFAULT_HARD_MODE = true;
     private static final int DEFAULT_DURATION = 1;
+    private static final int DEFAULT_CHANNEL = 1;
 
     public RemoteControlItem() {
         super(new Properties().stacksTo(1));
@@ -328,6 +330,16 @@ public class RemoteControlItem extends Item {
         tag.putInt(DURATION_TAG, clampDuration(duration));
     }
 
+    public static int getChannel(ItemStack stack) {
+        CompoundTag tag = ensureTag(stack);
+        return clampChannel(tag.getInt(CHANNEL_TAG));
+    }
+
+    public static void setChannel(ItemStack stack, int channel) {
+        CompoundTag tag = ensureTag(stack);
+        tag.putInt(CHANNEL_TAG, clampChannel(channel));
+    }
+
     public static List<String> getAvailablePulseIds() {
         Map<String, org.nooberic.dglib.pulse.Pulse> pulseMap = DgLibApi.get().getAllPulses();
         return new ArrayList<>(pulseMap.keySet());
@@ -409,6 +421,10 @@ public class RemoteControlItem extends Item {
             tag.putInt(DURATION_TAG, DEFAULT_DURATION);
             updated = true;
         }
+        if (!tag.contains(CHANNEL_TAG)) {
+            tag.putInt(CHANNEL_TAG, DEFAULT_CHANNEL);
+            updated = true;
+        }
         if (updated) {
             stack.setTag(tag);
         }
@@ -423,6 +439,7 @@ public class RemoteControlItem extends Item {
             tag.putString(PULSE_ID_TAG, defaultPulseId);
         }
         tag.putInt(DURATION_TAG, DEFAULT_DURATION);
+        tag.putInt(CHANNEL_TAG, DEFAULT_CHANNEL);
     }
 
     private static String getDefaultPulseId() {
@@ -436,5 +453,12 @@ public class RemoteControlItem extends Item {
 
     private static int clampDuration(int duration) {
         return Math.max(1, Math.min(10, duration));
+    }
+
+    private static int clampChannel(int channel) {
+        return switch (channel) {
+            case 2, 3 -> channel;
+            default -> 1;
+        };
     }
 }

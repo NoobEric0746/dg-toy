@@ -39,6 +39,8 @@ public class RemoteControlScreen extends Screen {
     private static final int PANEL_U = 0;
     private static final int PANEL_V = 0;
     private static final int BUTTON_SIZE = 12;
+    private static final int CHANNEL_WIDTH = 4;
+    private static final int CHANNEL_HEIGHT = 17;
     private static final int SAVE_WIDTH = 86;
     private static final int SAVE_HEIGHT = 13;
     private static final int SHOCK_WIDTH = 25;
@@ -52,6 +54,9 @@ public class RemoteControlScreen extends Screen {
     private static final int SOFT_U = 116;
     private static final int HARD_U = 129;
     private static final int UNBIND_U = 142;
+    private static final int CHANNEL_A_U = 156;
+    private static final int CHANNEL_AB_U = 161;
+    private static final int CHANNEL_B_U = 166;
     private static final int SHOCK_NORMAL_U = 144;
     private static final int SHOCK_HOVER_U = 170;
     private static final int SHOCK_PRESSED_U = 196;
@@ -79,10 +84,12 @@ public class RemoteControlScreen extends Screen {
     private static final int UNBIND_Y = 6;
     private static final int MODE_X = 91;
     private static final int MODE_Y = 42;
+    private static final int CHANNEL_X = 9;
+    private static final int CHANNEL_Y = 66;
     private static final int BAR_X = 20;
     private static final int BAR_Y = 46;
-    private static final int SHOCK_X = 19;
-    private static final int SHOCK_Y = 64;
+    private static final int SHOCK_X = 30;
+    private static final int SHOCK_Y = 63;
     private static final int TIME_PLUS_X = 85;
     private static final int TIME_PLUS_Y = 68;
     private static final int TIME_MINUS_X = 85;
@@ -110,6 +117,7 @@ public class RemoteControlScreen extends Screen {
     private int selectedPulseIndex;
     private boolean draggingSlider;
     private boolean leftMouseDown;
+    private int selectedChannel = 1;
 
     public RemoteControlScreen() {
         super(Component.translatable("screen.dg_toy.remote_control"));
@@ -133,6 +141,7 @@ public class RemoteControlScreen extends Screen {
         guiGraphics.blit(TEXTURE, left, top, PANEL_U, PANEL_V, UI_WIDTH, UI_HEIGHT);
         renderStrengthBar(guiGraphics, left, top);
         renderModeButton(guiGraphics, left, top, mouseX, mouseY);
+        renderChannelButton(guiGraphics, left, top, mouseX, mouseY);
         renderSimpleButton(guiGraphics, left + UNBIND_X, top + UNBIND_Y, mouseX, mouseY, BUTTON_SIZE, BUTTON_SIZE, UNBIND_U, BUTTON_NORMAL_V);
         renderShockButton(guiGraphics, left + SHOCK_X, top + SHOCK_Y, mouseX, mouseY);
         renderTimeButton(guiGraphics, left + TIME_PLUS_X, top + TIME_PLUS_Y, mouseX, mouseY, TIME_PLUS_V);
@@ -190,6 +199,18 @@ public class RemoteControlScreen extends Screen {
         guiGraphics.blit(TEXTURE, x, y, u, v, width, height);
     }
 
+    private void renderChannelButton(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+        int x = left + CHANNEL_X;
+        int y = top + CHANNEL_Y;
+        int u = switch (this.selectedChannel) {
+            case 2 -> CHANNEL_B_U;
+            case 3 -> CHANNEL_AB_U;
+            default -> CHANNEL_A_U;
+        };
+        int v = textureVForState(mouseX, mouseY, x, y, CHANNEL_WIDTH, CHANNEL_HEIGHT, 6, 26, 26);
+        guiGraphics.blit(TEXTURE, x, y, u, v, CHANNEL_WIDTH, CHANNEL_HEIGHT);
+    }
+
     private void renderShockButton(GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY) {
         int u = textureUForState(mouseX, mouseY, x, y, SHOCK_WIDTH, SHOCK_HEIGHT, SHOCK_NORMAL_U, SHOCK_HOVER_U, SHOCK_PRESSED_U);
         guiGraphics.blit(TEXTURE, x, y, u, SHOCK_V, SHOCK_WIDTH, SHOCK_HEIGHT);
@@ -234,6 +255,11 @@ public class RemoteControlScreen extends Screen {
         if (isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, BUTTON_SIZE, BUTTON_SIZE)) {
             this.hardMode = !this.hardMode;
             saveModeToHeldRemote();
+            return true;
+        }
+
+        if (isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)) {
+            cycleChannel();
             return true;
         }
 
@@ -332,6 +358,7 @@ public class RemoteControlScreen extends Screen {
 
     private boolean isRegularButton(double mouseX, double mouseY, int left, int top) {
         return isInside(mouseX, mouseY, left + UNBIND_X, top + UNBIND_Y, BUTTON_SIZE, BUTTON_SIZE)
+            || isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)
                 || isInside(mouseX, mouseY, left + SHOCK_X, top + SHOCK_Y, SHOCK_WIDTH, SHOCK_HEIGHT)
                 || isInside(mouseX, mouseY, left + TIME_PLUS_X, top + TIME_PLUS_Y, TIME_WIDTH, TIME_HEIGHT)
                 || isInside(mouseX, mouseY, left + TIME_MINUS_X, top + TIME_MINUS_Y, TIME_WIDTH, TIME_HEIGHT)
@@ -353,6 +380,11 @@ public class RemoteControlScreen extends Screen {
 
         if (isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, BUTTON_SIZE, BUTTON_SIZE)) {
             guiGraphics.renderTooltip(this.font, Component.translatable(this.hardMode ? "item.dg_toy.remote_control.mode.hard" : "item.dg_toy.remote_control.mode.soft"), mouseX, mouseY);
+            return;
+        }
+
+        if (isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)) {
+            guiGraphics.renderTooltip(this.font, Component.literal("通道: " + channelLabel(this.selectedChannel)), mouseX, mouseY);
             return;
         }
 
@@ -413,6 +445,7 @@ public class RemoteControlScreen extends Screen {
         this.hardMode = RemoteControlItem.isHardMode(stack);
         this.sliderCenterX = strengthToSliderX(RemoteControlItem.getStrength(stack));
         this.duration = RemoteControlItem.getDuration(stack);
+        this.selectedChannel = RemoteControlItem.getChannel(stack);
         this.pulseIds = RemoteControlItem.getAvailablePulseIds();
         String pulseId = RemoteControlItem.getPulseId(stack);
         this.selectedPulseIndex = this.pulseIds.indexOf(pulseId);
@@ -458,6 +491,15 @@ public class RemoteControlScreen extends Screen {
         syncHeldRemoteSettings();
     }
 
+    private void saveChannelToHeldRemote() {
+        ItemStack stack = getHeldRemoteStack();
+        if (stack.isEmpty()) {
+            return;
+        }
+        RemoteControlItem.setChannel(stack, this.selectedChannel);
+        syncHeldRemoteSettings();
+    }
+
     private void syncHeldRemoteSettings() {
         ItemStack stack = getHeldRemoteStack();
         if (stack.isEmpty()) {
@@ -467,8 +509,19 @@ public class RemoteControlScreen extends Screen {
                 RemoteControlItem.getStrength(stack),
                 RemoteControlItem.isHardMode(stack),
                 RemoteControlItem.getPulseId(stack),
-                RemoteControlItem.getDuration(stack)
+                RemoteControlItem.getDuration(stack),
+                RemoteControlItem.getChannel(stack)
         ));
+    }
+
+    private void cycleChannel() {
+        this.selectedChannel = switch (this.selectedChannel) {
+            case 1 -> 3;
+            case 3 -> 2;
+            case 2 -> 1;
+            default -> 1;
+        };
+        saveChannelToHeldRemote();
     }
 
     private void changeDuration(boolean increase) {
@@ -490,6 +543,14 @@ public class RemoteControlScreen extends Screen {
 
     private static String formatDuration(int duration) {
         return Integer.toString(duration);
+    }
+
+    private static String channelLabel(int channel) {
+        return switch (channel) {
+            case 2 -> "B";
+            case 3 -> "A+B";
+            default -> "A";
+        };
     }
 
     private ItemStack getHeldRemoteStack() {

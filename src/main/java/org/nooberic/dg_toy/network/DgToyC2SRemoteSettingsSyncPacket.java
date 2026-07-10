@@ -14,12 +14,14 @@ public class DgToyC2SRemoteSettingsSyncPacket {
     private final boolean hardMode;
     private final String pulseId;
     private final int duration;
+    private final int channel;
 
-    public DgToyC2SRemoteSettingsSyncPacket(int strength, boolean hardMode, String pulseId, int duration) {
+    public DgToyC2SRemoteSettingsSyncPacket(int strength, boolean hardMode, String pulseId, int duration, int channel) {
         this.strength = strength;
         this.hardMode = hardMode;
         this.pulseId = pulseId;
         this.duration = duration;
+        this.channel = channel;
     }
 
     public static void encode(DgToyC2SRemoteSettingsSyncPacket msg, FriendlyByteBuf buf) {
@@ -27,10 +29,11 @@ public class DgToyC2SRemoteSettingsSyncPacket {
         buf.writeBoolean(msg.hardMode);
         buf.writeUtf(msg.pulseId);
         buf.writeInt(msg.duration);
+        buf.writeInt(msg.channel);
     }
 
     public static DgToyC2SRemoteSettingsSyncPacket decode(FriendlyByteBuf buf) {
-        return new DgToyC2SRemoteSettingsSyncPacket(buf.readInt(), buf.readBoolean(), buf.readUtf(), buf.readInt());
+        return new DgToyC2SRemoteSettingsSyncPacket(buf.readInt(), buf.readBoolean(), buf.readUtf(), buf.readInt(), buf.readInt());
     }
 
     public static void handle(DgToyC2SRemoteSettingsSyncPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
@@ -51,6 +54,7 @@ public class DgToyC2SRemoteSettingsSyncPacket {
             RemoteControlItem.setHardMode(stack, msg.hardMode);
             RemoteControlItem.setPulseId(stack, msg.pulseId);
             RemoteControlItem.setDuration(stack, msg.duration);
+            RemoteControlItem.setChannel(stack, msg.channel);
         });
         ctx.setPacketHandled(true);
     }
