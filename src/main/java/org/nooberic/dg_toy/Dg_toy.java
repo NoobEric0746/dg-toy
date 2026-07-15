@@ -5,6 +5,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.InterModComms;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -14,6 +16,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
+import top.theillusivec4.curios.api.SlotTypeMessage;
+import org.nooberic.dg_toy.client.PowerboxCurioRenderer;
 import org.nooberic.dg_toy.item.ModItems;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.slf4j.Logger;
@@ -39,6 +43,7 @@ public class Dg_toy {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
         modEventBus.addListener(this::commonSetup);
+        DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> PowerboxCurioRenderer.register(modEventBus));
 
         ModItems.ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
@@ -47,7 +52,11 @@ public class Dg_toy {
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
-        event.enqueueWork(DgToyNetworking::register);
+        event.enqueueWork(() -> {
+            DgToyNetworking.register();
+            InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
+                    new SlotTypeMessage.Builder("legs").size(1).priority(110).build());
+        });
         LOGGER.info("DGToy common setup");
     }
 
