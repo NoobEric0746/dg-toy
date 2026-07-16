@@ -20,6 +20,7 @@ import top.theillusivec4.curios.api.SlotTypeMessage;
 import org.nooberic.dg_toy.client.PowerboxCurioRenderer;
 import org.nooberic.dg_toy.item.ModItems;
 import org.nooberic.dg_toy.network.DgToyNetworking;
+import org.nooberic.dg_toy.pawprint.PawprintRules;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -63,6 +64,7 @@ public class Dg_toy {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        PawprintRules.bootstrap();
         LOGGER.info("DGToy server starting");
     }
 }

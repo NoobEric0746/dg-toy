@@ -75,6 +75,18 @@ public final class DgToyNetworking {
             .consumerMainThread(DgToyS2CRemoteTargetOnlineResultPacket::handle)
             .add();
 
+        CHANNEL.messageBuilder(DgToyC2SPawprintRuleTogglePacket.class, 8, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SPawprintRuleTogglePacket::encode)
+            .decoder(DgToyC2SPawprintRuleTogglePacket::decode)
+            .consumerMainThread(DgToyC2SPawprintRuleTogglePacket::handle)
+            .add();
+
+        CHANNEL.messageBuilder(DgToyC2SPawprintRuleStringVarPacket.class, 9, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SPawprintRuleStringVarPacket::encode)
+            .decoder(DgToyC2SPawprintRuleStringVarPacket::decode)
+            .consumerMainThread(DgToyC2SPawprintRuleStringVarPacket::handle)
+            .add();
+
         registered = true;
     }
 

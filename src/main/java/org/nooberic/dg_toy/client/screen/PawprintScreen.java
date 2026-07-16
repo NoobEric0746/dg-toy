@@ -3,13 +3,22 @@ package org.nooberic.dg_toy.client.screen;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.nooberic.dg_toy.Dg_toy;
+import org.nooberic.dg_toy.network.DgToyC2SPawprintRuleTogglePacket;
+import org.nooberic.dg_toy.network.DgToyNetworking;
+import org.nooberic.dg_toy.pawprint.BasePawprintRuleHandler;
+import org.nooberic.dg_toy.pawprint.PawprintRuleNbtHelper;
+import org.nooberic.dg_toy.pawprint.PawprintRuleRegistry;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
@@ -85,7 +94,7 @@ public class PawprintScreen extends Screen {
     private int sliderCenterX = TRACK_MIN_CENTER_X;
     private boolean draggingSlider;
     private boolean leftMouseDown;
-    private final List<RuleEntry> rules = createTestRules();
+    private final List<RuleEntry> rules = new ArrayList<>();
     private int ruleScrollOffset;
 
     public PawprintScreen() {
@@ -97,6 +106,7 @@ public class PawprintScreen extends Screen {
         super.init();
         this.draggingSlider = false;
         this.leftMouseDown = false;
+        refreshRules();
     }
 
     @Override
@@ -120,28 +130,30 @@ public class PawprintScreen extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button != 0) {
+        if (button != 0 && button != 1) {
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
-        this.leftMouseDown = true;
+        if (button == 0) {
+            this.leftMouseDown = true;
+        }
         int left = leftPos();
         int top = topPos();
         int sliderX = left + this.sliderCenterX + SLIDER_CENTER_OFFSET_X - (SLIDER_WIDTH / 2);
         int sliderY = top + TRACK_CENTER_Y - (SLIDER_HEIGHT / 2);
 
-        if (isInside(mouseX, mouseY, sliderX, sliderY, SLIDER_WIDTH, SLIDER_HEIGHT)) {
+        if (button == 0 && isInside(mouseX, mouseY, sliderX, sliderY, SLIDER_WIDTH, SLIDER_HEIGHT)) {
             this.draggingSlider = true;
             updateSlider(mouseX, left);
             return true;
         }
 
-        if (isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, MODE_WIDTH, MODE_HEIGHT)) {
+        if (button == 0 && isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, MODE_WIDTH, MODE_HEIGHT)) {
             this.pawprintModeIndex = (this.pawprintModeIndex + 1) % PAWPRINT_MODES.length;
             return true;
         }
 
-        if (isInside(mouseX, mouseY, left + MODE_BUTTON_X, top + MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE)) {
+        if (button == 0 && isInside(mouseX, mouseY, left + MODE_BUTTON_X, top + MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE)) {
             this.hardMode = !this.hardMode;
             return true;
         }
@@ -156,7 +168,12 @@ public class PawprintScreen extends Screen {
             int toggleX = left + RULE_X + RULE_TOGGLE_OFFSET_X;
             int toggleY = ruleY + RULE_TOGGLE_OFFSET_Y;
             if (isInside(mouseX, mouseY, toggleX, toggleY, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE)) {
-                rule.enabled = !rule.enabled;
+                if (button == 0) {
+                    rule.enabled = !rule.enabled;
+                    DgToyNetworking.sendToServer(new DgToyC2SPawprintRuleTogglePacket(rule.ruleId, rule.enabled));
+                } else if (button == 1) {
+                    openRuleSettings(rule);
+                }
                 return true;
             }
         }
@@ -318,17 +335,28 @@ public class PawprintScreen extends Screen {
         return Math.max(0, contentHeight - viewportHeight);
     }
 
-    private static List<RuleEntry> createTestRules() {
-        List<RuleEntry> list = new ArrayList<>();
-        for (int index = 1; index <= 5; index++) {
-            list.add(new RuleEntry("规则" + index));
-        }
-        return list;
-    }
-
     private void updateSlider(double mouseX, int left) {
         int localX = (int) Math.round(mouseX - left - SLIDER_CENTER_OFFSET_X);
         this.sliderCenterX = clamp(localX, TRACK_MIN_CENTER_X, TRACK_MAX_CENTER_X);
+    }
+
+    private void refreshRules() {
+        this.rules.clear();
+        Player player = Minecraft.getInstance().player;
+        ItemStack pawprintStack = player == null ? ItemStack.EMPTY : player.getMainHandItem();
+
+        List<BasePawprintRuleHandler<?>> handlers = new ArrayList<>(PawprintRuleRegistry.allHandlers());
+        handlers.sort(Comparator.comparing(BasePawprintRuleHandler::getDisplayName));
+        for (BasePawprintRuleHandler<?> handler : handlers) {
+            boolean enabled = !pawprintStack.isEmpty() && PawprintRuleNbtHelper.isRuleEnabled(pawprintStack, handler.getRuleId());
+            this.rules.add(new RuleEntry(handler.getRuleId(), handler.getDisplayName(), enabled, handler));
+        }
+    }
+
+    private void openRuleSettings(RuleEntry rule) {
+        if (this.minecraft != null) {
+            this.minecraft.setScreen(new PawprintRuleSettingsScreen(this, rule.handler));
+        }
     }
 
     private int leftPos() {
@@ -355,11 +383,16 @@ public class PawprintScreen extends Screen {
     }
 
     private static class RuleEntry {
+        private final String ruleId;
         private final String name;
+        private final BasePawprintRuleHandler<?> handler;
         private boolean enabled;
 
-        private RuleEntry(String name) {
+        private RuleEntry(String ruleId, String name, boolean enabled, BasePawprintRuleHandler<?> handler) {
+            this.ruleId = ruleId;
             this.name = name;
+            this.enabled = enabled;
+            this.handler = handler;
         }
     }
 }
