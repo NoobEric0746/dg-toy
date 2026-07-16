@@ -1,5 +1,6 @@
 {
   "itemGroup.dg_toy.main": "DGToy",
+  "item.dg_toy.pawprint": "爪印",
   "item.dg_toy.powerbox": "郊狼主机",
   "item.dg_toy.remote_control": "遥控器",
   "item.dg_toy.remote_control.desc": "用于后续扩展的控制设备",
@@ -20,5 +21,6 @@
   "item.dg_toy.powerbox.pairing_unavailable": "当前无法进入配对模式",
   "item.dg_toy.powerbox.disconnect_all": "已断开所有与你连接的遥控器",
   "item.dg_toy.powerbox.disconnected_by_remote": "遥控器已断开与你的连接",
-  "screen.dg_toy.remote_control": "遥控器UI"
+  "screen.dg_toy.remote_control": "遥控器UI",
+  "screen.dg_toy.pawprint": "爪印UI"
 }

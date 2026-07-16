@@ -34,6 +34,7 @@ public class Dg_toy {
             .icon(() -> ModItems.POWERBOX.get().getDefaultInstance())
             .title(net.minecraft.network.chat.Component.translatable("itemGroup." + MODID + ".main"))
             .displayItems((parameters, output) -> {
+                output.accept(ModItems.PAWPRINT.get());
                 output.accept(ModItems.POWERBOX.get());
                 output.accept(ModItems.REMOTE_CONTROL.get());
             })
