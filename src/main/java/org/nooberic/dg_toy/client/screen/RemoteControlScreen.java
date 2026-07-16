@@ -19,6 +19,7 @@ import org.nooberic.dg_toy.item.RemoteControlItem;
 import org.nooberic.dg_toy.network.DgToyC2SRemoteSettingsSyncPacket;
 import org.nooberic.dg_toy.network.DgToyC2SRemoteSavePresetPacket;
 import org.nooberic.dg_toy.network.DgToyC2SRemoteShockPacket;
+import org.nooberic.dg_toy.network.DgToyC2SRemoteTargetOnlineQueryPacket;
 import org.nooberic.dg_toy.network.DgToyC2SRemoteUnbindPacket;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 
@@ -128,6 +129,7 @@ public class RemoteControlScreen extends Screen {
     protected void init() {
         super.init();
         loadStateFromHeldRemote();
+        requestBoundTargetOnlineStatus();
         this.draggingSlider = false;
         this.leftMouseDown = false;
     }
@@ -489,6 +491,18 @@ public class RemoteControlScreen extends Screen {
         if (this.selectedPulseIndex < 0) {
             this.selectedPulseIndex = 0;
             savePulseIdToHeldRemote();
+        }
+    }
+
+    private void requestBoundTargetOnlineStatus() {
+        ItemStack stack = getHeldRemoteStack();
+        if (stack.isEmpty() || !RemoteControlItem.isBound(stack)) {
+            return;
+        }
+
+        UUID playerId = RemoteControlItem.getBoundPlayerUuid(stack);
+        if (playerId != null) {
+            DgToyNetworking.sendToServer(new DgToyC2SRemoteTargetOnlineQueryPacket(playerId));
         }
     }
 

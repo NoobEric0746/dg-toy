@@ -20,19 +20,24 @@ public class PowerboxCurioModel extends HumanoidModel<net.minecraft.world.entity
             "main"
     );
 
-    private final ModelPart root;
-
     public PowerboxCurioModel(ModelPart root) {
         super(root);
-        this.root = root.getChild("root");
     }
 
     public static LayerDefinition createBodyLayer() {
         MeshDefinition meshDefinition = new MeshDefinition();
         PartDefinition partDefinition = meshDefinition.getRoot();
 
-        partDefinition.addOrReplaceChild(
-                "root",
+    partDefinition.addOrReplaceChild("head", CubeListBuilder.create(), PartPose.ZERO);
+    partDefinition.addOrReplaceChild("hat", CubeListBuilder.create(), PartPose.ZERO);
+    PartDefinition body = partDefinition.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.ZERO);
+    partDefinition.addOrReplaceChild("right_arm", CubeListBuilder.create(), PartPose.ZERO);
+    partDefinition.addOrReplaceChild("left_arm", CubeListBuilder.create(), PartPose.ZERO);
+    partDefinition.addOrReplaceChild("right_leg", CubeListBuilder.create(), PartPose.ZERO);
+    partDefinition.addOrReplaceChild("left_leg", CubeListBuilder.create(), PartPose.ZERO);
+
+    body.addOrReplaceChild(
+        "powerbox",
                 CubeListBuilder.create()
                 .texOffs(18, 15)
                 .addBox(-5.0F, 0.0F, -8.0F, 9.0F, 2.0F, 16.0F, new CubeDeformation(0.0F))
@@ -52,6 +57,6 @@ public class PowerboxCurioModel extends HumanoidModel<net.minecraft.world.entity
 
     @Override
     public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        this.root.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
+        this.body.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
     }
 }

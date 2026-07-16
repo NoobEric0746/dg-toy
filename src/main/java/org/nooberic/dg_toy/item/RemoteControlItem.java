@@ -9,14 +9,21 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.world.entity.projectile.ProjectileUtil;
 import org.jetbrains.annotations.Nullable;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dg_toy.client.screen.RemoteControlScreen;
@@ -66,6 +73,10 @@ public class RemoteControlItem extends Item {
         ItemStack itemStack = player.getItemInHand(hand);
 
         if (hand != InteractionHand.MAIN_HAND) {
+            return InteractionResultHolder.pass(itemStack);
+        }
+
+        if (isTargetingOtherPlayer(level, player)) {
             return InteractionResultHolder.pass(itemStack);
         }
 
@@ -137,6 +148,26 @@ public class RemoteControlItem extends Item {
         RemoteControlStateHelper.invalidateIfCleared(actualStack);
 
         return tryBindToTarget(serverPlayer, targetPlayer, actualStack);
+    }
+
+    private static boolean isTargetingOtherPlayer(Level level, Player player) {
+        Vec3 eyePosition = player.getEyePosition();
+        Vec3 viewVector = player.getViewVector(1.0F);
+        double reachDistance = player.getBlockReach();
+        Vec3 reachPosition = eyePosition.add(viewVector.scale(reachDistance));
+
+        HitResult blockHitResult = level.clip(new ClipContext(eyePosition, reachPosition, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
+        double maxDistanceSqr = reachDistance * reachDistance;
+        if (blockHitResult.getType() != HitResult.Type.MISS) {
+            maxDistanceSqr = blockHitResult.getLocation().distanceToSqr(eyePosition);
+        }
+
+        AABB searchBox = player.getBoundingBox().expandTowards(viewVector.scale(reachDistance)).inflate(1.0D);
+        EntityHitResult entityHitResult = ProjectileUtil.getEntityHitResult(player, eyePosition, reachPosition, searchBox,
+                entity -> entity instanceof Player && entity != player && !entity.isSpectator() && entity.isPickable(),
+                maxDistanceSqr);
+
+        return entityHitResult != null && entityHitResult.getEntity() instanceof Player;
     }
 
     private static InteractionResult tryBindToTarget(ServerPlayer actor, ServerPlayer targetPlayer, ItemStack stack) {

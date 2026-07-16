@@ -42,8 +42,9 @@ public final class PlayerStatusBroadcaster {
 
     @SubscribeEvent
     public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        LAST_SENT.remove(event.getEntity().getUUID());
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            broadcastOffline(serverPlayer);
+            LAST_SENT.remove(serverPlayer.getUUID());
             VirtualPairingManager.clearPairingWindow(serverPlayer.getUUID());
             PlayerConnectionSyncManager.clear(serverPlayer.getUUID());
         }
@@ -89,6 +90,20 @@ public final class PlayerStatusBroadcaster {
         DgToyS2CPlayerStatusSyncPacket packet = new DgToyS2CPlayerStatusSyncPacket(sourcePlayer.getUUID(), connected, virtuallyBound, pairingExpiresAtMs, updatedAtMs);
         for (ServerPlayer target : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
             DgToyNetworking.sendToPlayer(target, packet);
+        }
+    }
+
+    private static void broadcastOffline(ServerPlayer sourcePlayer) {
+        if (ServerLifecycleHooks.getCurrentServer() == null) {
+            return;
+        }
+
+        long updatedAtMs = Math.max(PlayerConnectionSyncManager.getUpdatedAtMs(sourcePlayer.getUUID()), System.currentTimeMillis());
+        DgToyS2CPlayerStatusSyncPacket packet = new DgToyS2CPlayerStatusSyncPacket(sourcePlayer.getUUID(), false, false, 0L, updatedAtMs);
+        for (ServerPlayer target : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
+            if (!target.getUUID().equals(sourcePlayer.getUUID())) {
+                DgToyNetworking.sendToPlayer(target, packet);
+            }
         }
     }
 

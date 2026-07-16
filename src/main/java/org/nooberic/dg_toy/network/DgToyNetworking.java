@@ -63,6 +63,18 @@ public final class DgToyNetworking {
             .consumerMainThread(DgToyC2SRemoteSavePresetPacket::handle)
             .add();
 
+        CHANNEL.messageBuilder(DgToyC2SRemoteTargetOnlineQueryPacket.class, 6, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SRemoteTargetOnlineQueryPacket::encode)
+            .decoder(DgToyC2SRemoteTargetOnlineQueryPacket::decode)
+            .consumerMainThread(DgToyC2SRemoteTargetOnlineQueryPacket::handle)
+            .add();
+
+        CHANNEL.messageBuilder(DgToyS2CRemoteTargetOnlineResultPacket.class, 7, NetworkDirection.PLAY_TO_CLIENT)
+            .encoder(DgToyS2CRemoteTargetOnlineResultPacket::encode)
+            .decoder(DgToyS2CRemoteTargetOnlineResultPacket::decode)
+            .consumerMainThread(DgToyS2CRemoteTargetOnlineResultPacket::handle)
+            .add();
+
         registered = true;
     }
 
