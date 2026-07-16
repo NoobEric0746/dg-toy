@@ -1,14 +1,17 @@
 package org.nooberic.dg_toy.server;
 
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import org.nooberic.dg_toy.item.PowerboxItem;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.nooberic.dg_toy.network.DgToyS2CPlayerStatusSyncPacket;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.Map;
 import java.util.UUID;
@@ -77,17 +80,18 @@ public final class PlayerStatusBroadcaster {
     }
 
     private static void sendStatusIfChanged(ServerPlayer sourcePlayer, boolean onlyIfChanged) {
+        boolean showNameplate = hasPowerboxForNameplate(sourcePlayer);
         boolean connected = PlayerConnectionSyncManager.isConnected(sourcePlayer.getUUID());
         boolean virtuallyBound = PlayerPairingData.isBound(sourcePlayer);
         long pairingExpiresAtMs = toEpochMillisFromTicks(VirtualPairingManager.getPairingExpiresAt(sourcePlayer.getUUID()));
         long updatedAtMs = Math.max(PlayerConnectionSyncManager.getUpdatedAtMs(sourcePlayer.getUUID()), VirtualPairingManager.getCurrentLogicalTime(sourcePlayer));
-        SentStatus newStatus = new SentStatus(connected, virtuallyBound, pairingExpiresAtMs, updatedAtMs);
+        SentStatus newStatus = new SentStatus(showNameplate, connected, virtuallyBound, pairingExpiresAtMs, updatedAtMs);
         SentStatus oldStatus = LAST_SENT.put(sourcePlayer.getUUID(), newStatus);
         if (onlyIfChanged && newStatus.equals(oldStatus)) {
             return;
         }
 
-        DgToyS2CPlayerStatusSyncPacket packet = new DgToyS2CPlayerStatusSyncPacket(sourcePlayer.getUUID(), connected, virtuallyBound, pairingExpiresAtMs, updatedAtMs);
+        DgToyS2CPlayerStatusSyncPacket packet = new DgToyS2CPlayerStatusSyncPacket(sourcePlayer.getUUID(), showNameplate, connected, virtuallyBound, pairingExpiresAtMs, updatedAtMs);
         for (ServerPlayer target : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
             DgToyNetworking.sendToPlayer(target, packet);
         }
@@ -99,12 +103,26 @@ public final class PlayerStatusBroadcaster {
         }
 
         long updatedAtMs = Math.max(PlayerConnectionSyncManager.getUpdatedAtMs(sourcePlayer.getUUID()), System.currentTimeMillis());
-        DgToyS2CPlayerStatusSyncPacket packet = new DgToyS2CPlayerStatusSyncPacket(sourcePlayer.getUUID(), false, false, 0L, updatedAtMs);
+        DgToyS2CPlayerStatusSyncPacket packet = new DgToyS2CPlayerStatusSyncPacket(sourcePlayer.getUUID(), false, false, false, 0L, updatedAtMs);
         for (ServerPlayer target : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
             if (!target.getUUID().equals(sourcePlayer.getUUID())) {
                 DgToyNetworking.sendToPlayer(target, packet);
             }
         }
+    }
+
+    private static boolean hasPowerboxForNameplate(ServerPlayer player) {
+        if (isPowerbox(player.getMainHandItem()) || isPowerbox(player.getOffhandItem())) {
+            return true;
+        }
+
+        return CuriosApi.getCuriosInventory(player)
+                .map(handler -> !handler.findCurios(PlayerStatusBroadcaster::isPowerbox).isEmpty())
+                .orElse(false);
+    }
+
+    private static boolean isPowerbox(ItemStack stack) {
+        return stack.getItem() instanceof PowerboxItem;
     }
 
     private static long toEpochMillisFromTicks(long expiresAtTick) {
@@ -116,6 +134,6 @@ public final class PlayerStatusBroadcaster {
         return System.currentTimeMillis() + remainingTicks * 50L;
     }
 
-    private record SentStatus(boolean connected, boolean virtuallyBound, long pairingExpiresAtMs, long updatedAtMs) {
+    private record SentStatus(boolean showNameplate, boolean connected, boolean virtuallyBound, long pairingExpiresAtMs, long updatedAtMs) {
     }
 }

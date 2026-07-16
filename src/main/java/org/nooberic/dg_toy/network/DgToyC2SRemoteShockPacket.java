@@ -46,6 +46,10 @@ public class DgToyC2SRemoteShockPacket {
                 return;
             }
 
+            if (!RemoteControlStateHelper.isShockAvailable(targetPlayer)) {
+                return;
+            }
+
             int strength = RemoteControlItem.getStrength(stack);
             int duration = RemoteControlItem.getDuration(stack);
             int channel = RemoteControlItem.getChannel(stack);

@@ -75,6 +75,10 @@ public final class PlayerStatusNameplateRenderer {
 
     private static NameplateStatusDisplay buildStatusDisplay(Player player, LocalPlayer localPlayer) {
         PlayerConnectionStatusSnapshot snapshot = PlayerStatusClientCache.get(player.getUUID());
+        if (!snapshot.showNameplate()) {
+            return NameplateStatusDisplay.empty();
+        }
+
         boolean connected = snapshot.connected();
         boolean virtuallyBound = snapshot.virtuallyBound();
         long pairingExpiresAtMs = snapshot.pairingExpiresAtMs();
@@ -101,6 +105,11 @@ public final class PlayerStatusNameplateRenderer {
     }
 
     private record NameplateStatusDisplay(ResourceLocation leftIcon, Component leftText, ResourceLocation rightIcon, Component rightText) {
+        static NameplateStatusDisplay empty() {
+            Component empty = Component.empty();
+            return new NameplateStatusDisplay(POWERBOX_ICON, empty, CONTROLLER_ICON, empty);
+        }
+
         boolean isEmpty() {
             return leftText.getString().isEmpty() && rightText.getString().isEmpty();
         }

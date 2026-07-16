@@ -14,8 +14,8 @@ public final class PlayerStatusClientCache {
         return CACHE.getOrDefault(playerId, PlayerConnectionStatusSnapshot.empty());
     }
 
-    public static void put(UUID playerId, boolean connected, boolean virtuallyBound, long pairingExpiresAtMs, long updatedAtMs) {
-        CACHE.put(playerId, new PlayerConnectionStatusSnapshot(connected, virtuallyBound, pairingExpiresAtMs, updatedAtMs));
+    public static void put(UUID playerId, boolean showNameplate, boolean connected, boolean virtuallyBound, long pairingExpiresAtMs, long updatedAtMs) {
+        CACHE.put(playerId, new PlayerConnectionStatusSnapshot(showNameplate, connected, virtuallyBound, pairingExpiresAtMs, updatedAtMs));
     }
 
     public static void remove(UUID playerId) {

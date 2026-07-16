@@ -10,13 +10,15 @@ import java.util.function.Supplier;
 
 public class DgToyS2CPlayerStatusSyncPacket {
     private final UUID playerId;
+    private final boolean showNameplate;
     private final boolean connected;
     private final boolean virtuallyBound;
     private final long pairingExpiresAtMs;
     private final long updatedAtMs;
 
-    public DgToyS2CPlayerStatusSyncPacket(UUID playerId, boolean connected, boolean virtuallyBound, long pairingExpiresAtMs, long updatedAtMs) {
+    public DgToyS2CPlayerStatusSyncPacket(UUID playerId, boolean showNameplate, boolean connected, boolean virtuallyBound, long pairingExpiresAtMs, long updatedAtMs) {
         this.playerId = playerId;
+        this.showNameplate = showNameplate;
         this.connected = connected;
         this.virtuallyBound = virtuallyBound;
         this.pairingExpiresAtMs = pairingExpiresAtMs;
@@ -25,6 +27,7 @@ public class DgToyS2CPlayerStatusSyncPacket {
 
     public static void encode(DgToyS2CPlayerStatusSyncPacket msg, FriendlyByteBuf buf) {
         buf.writeUUID(msg.playerId);
+        buf.writeBoolean(msg.showNameplate);
         buf.writeBoolean(msg.connected);
         buf.writeBoolean(msg.virtuallyBound);
         buf.writeLong(msg.pairingExpiresAtMs);
@@ -34,6 +37,7 @@ public class DgToyS2CPlayerStatusSyncPacket {
     public static DgToyS2CPlayerStatusSyncPacket decode(FriendlyByteBuf buf) {
         return new DgToyS2CPlayerStatusSyncPacket(
                 buf.readUUID(),
+            buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readBoolean(),
                 buf.readLong(),
@@ -47,7 +51,7 @@ public class DgToyS2CPlayerStatusSyncPacket {
             if (Minecraft.getInstance().level == null) {
                 return;
             }
-            PlayerStatusClientCache.put(msg.playerId, msg.connected, msg.virtuallyBound, msg.pairingExpiresAtMs, msg.updatedAtMs);
+            PlayerStatusClientCache.put(msg.playerId, msg.showNameplate, msg.connected, msg.virtuallyBound, msg.pairingExpiresAtMs, msg.updatedAtMs);
         });
         ctx.setPacketHandled(true);
     }

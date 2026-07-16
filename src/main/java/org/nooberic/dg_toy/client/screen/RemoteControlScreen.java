@@ -30,6 +30,7 @@ import java.util.UUID;
 
 import static net.minecraft.ChatFormatting.GRAY;
 import static net.minecraft.ChatFormatting.GREEN;
+import static net.minecraft.ChatFormatting.RED;
 import static net.minecraft.ChatFormatting.YELLOW;
 
 @OnlyIn(Dist.CLIENT)
@@ -453,26 +454,28 @@ public class RemoteControlScreen extends Screen {
             return Component.literal("遥控器未连接玩家");
         }
 
-        boolean online = isPlayerOnline(playerId);
         String safeName = playerName == null || playerName.isBlank() ? playerId.toString() : playerName;
         return Component.literal("连接到")
                 .append(coloredPlayerName(safeName))
-                .append(Component.literal(online ? "在线" : "离线").withStyle(online ? GREEN : GRAY));
+                .append(buildTargetStatusText(playerId));
     }
 
-    private boolean isPlayerOnline(UUID playerId) {
+    private Component buildTargetStatusText(UUID playerId) {
         Minecraft minecraft = this.minecraft;
         if (minecraft == null) {
-            return false;
+            return Component.literal("离线").withStyle(RED);
         }
 
         LocalPlayer localPlayer = minecraft.player;
-        if (localPlayer != null && localPlayer.getUUID().equals(playerId)) {
-            return true;
-        }
-
         PlayerConnectionStatusSnapshot snapshot = PlayerStatusClientCache.get(playerId);
-        return snapshot.connected() || minecraft.level != null && minecraft.level.getPlayerByUUID(playerId) != null;
+        boolean online = snapshot.connected() || minecraft.level != null && minecraft.level.getPlayerByUUID(playerId) != null;
+        if (!online) {
+            return Component.literal("离线").withStyle(RED);
+        }
+        if (snapshot.connected()) {
+            return Component.literal("可用").withStyle(GREEN);
+        }
+        return Component.literal("在线").withStyle(YELLOW);
     }
 
     private static MutableComponent coloredPlayerName(String playerName) {

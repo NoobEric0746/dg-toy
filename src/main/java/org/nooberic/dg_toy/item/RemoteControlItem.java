@@ -501,6 +501,10 @@ public class RemoteControlItem extends Item {
             return false;
         }
 
+        if (!RemoteControlStateHelper.isShockAvailable(targetPlayer)) {
+            return false;
+        }
+
         String pulseId = getSavedShockPulseId(stack);
         if (pulseId.isEmpty()) {
             return false;

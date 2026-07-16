@@ -4,7 +4,9 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+import org.nooberic.dg_toy.item.PowerboxItem;
 import org.nooberic.dg_toy.item.RemoteControlItem;
+import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.UUID;
 
@@ -53,6 +55,16 @@ public final class RemoteControlStateHelper {
         PlayerPairingData.setBound(player, false);
     }
 
+    public static boolean hasEquippedPowerbox(ServerPlayer player) {
+        return CuriosApi.getCuriosInventory(player)
+                .map(handler -> !handler.findCurios(RemoteControlStateHelper::isPowerbox).isEmpty())
+                .orElse(false);
+    }
+
+    public static boolean isShockAvailable(ServerPlayer player) {
+        return hasEquippedPowerbox(player);
+    }
+
     @Nullable
     public static ServerPlayer findOnlinePlayer(UUID playerId) {
         var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
@@ -89,5 +101,9 @@ public final class RemoteControlStateHelper {
                 return;
             }
         }
+    }
+
+    private static boolean isPowerbox(ItemStack stack) {
+        return stack.getItem() instanceof PowerboxItem;
     }
 }

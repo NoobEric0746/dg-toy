@@ -31,8 +31,10 @@ public class DgToyC2SRemoteTargetOnlineQueryPacket {
                 return;
             }
 
-            boolean online = RemoteControlStateHelper.findOnlinePlayer(msg.targetPlayerId) != null;
-            DgToyNetworking.sendToPlayer(sender, new DgToyS2CRemoteTargetOnlineResultPacket(msg.targetPlayerId, online));
+            ServerPlayer targetPlayer = RemoteControlStateHelper.findOnlinePlayer(msg.targetPlayerId);
+            boolean online = targetPlayer != null;
+            boolean available = targetPlayer != null && RemoteControlStateHelper.isShockAvailable(targetPlayer);
+            DgToyNetworking.sendToPlayer(sender, new DgToyS2CRemoteTargetOnlineResultPacket(msg.targetPlayerId, online, available));
         });
         ctx.setPacketHandled(true);
     }
