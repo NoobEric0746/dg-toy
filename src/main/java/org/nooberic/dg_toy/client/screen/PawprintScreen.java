@@ -9,6 +9,9 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.nooberic.dg_toy.Dg_toy;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @OnlyIn(Dist.CLIENT)
 public class PawprintScreen extends Screen {
     private static final ResourceLocation TEXTURE = new ResourceLocation(Dg_toy.MODID, "textures/gui/gui_pawprint.png");
@@ -52,6 +55,28 @@ public class PawprintScreen extends Screen {
     private static final int MODE_BUTTON_NORMAL_V = 28;
     private static final int MODE_BUTTON_HOVER_V = 15;
     private static final int MODE_BUTTON_PRESSED_V = 2;
+    private static final int RULE_TOGGLE_OFF_U = 119;
+    private static final int RULE_TOGGLE_OFF_HOVER_U = 130;
+    private static final int RULE_TOGGLE_OFF_PRESSED_U = 141;
+    private static final int RULE_TOGGLE_ON_U = 119;
+    private static final int RULE_TOGGLE_ON_HOVER_U = 130;
+    private static final int RULE_TOGGLE_ON_PRESSED_U = 141;
+    private static final int RULE_TOGGLE_OFF_V = 89;
+    private static final int RULE_TOGGLE_ON_V = 100;
+    private static final int RULE_SCROLL_STEP = 4;
+
+    private static final int RULE_X = 8;
+    private static final int RULE_Y = 73;
+    private static final int RULE_SPACING_Y = 20;
+    private static final int RULE_WIDTH = 90;
+    private static final int RULE_HEIGHT = 17;
+    private static final int RULE_U = 119;
+    private static final int RULE_V = 71;
+    private static final int RULE_TOGGLE_OFFSET_X = 78;
+    private static final int RULE_TOGGLE_OFFSET_Y = 3;
+    private static final int RULE_TOGGLE_SIZE = 9;
+    private static final int RULES_VIEWPORT_TOP = RULE_Y;
+    private static final int RULES_VIEWPORT_BOTTOM = 127;
 
     private static final String[] PAWPRINT_MODES = {"默认", "模式1", "模式2"};
 
@@ -60,6 +85,8 @@ public class PawprintScreen extends Screen {
     private int sliderCenterX = TRACK_MIN_CENTER_X;
     private boolean draggingSlider;
     private boolean leftMouseDown;
+    private final List<RuleEntry> rules = createTestRules();
+    private int ruleScrollOffset;
 
     public PawprintScreen() {
         super(Component.translatable("screen.dg_toy.pawprint"));
@@ -84,6 +111,7 @@ public class PawprintScreen extends Screen {
         renderStrengthBar(guiGraphics, left, top);
         renderStrengthModeButtons(guiGraphics, left, top, mouseX, mouseY);
         renderSlider(guiGraphics, left, top, mouseX, mouseY);
+        renderRuleBlocks(guiGraphics, left, top, mouseX, mouseY);
         RenderSystem.disableBlend();
 
         renderModeText(guiGraphics, left, top);
@@ -118,7 +146,40 @@ public class PawprintScreen extends Screen {
             return true;
         }
 
+        for (int index = 0; index < this.rules.size(); index++) {
+            RuleEntry rule = this.rules.get(index);
+            int ruleY = top + RULE_Y + index * RULE_SPACING_Y - this.ruleScrollOffset;
+            if (!isRuleVisible(top, ruleY)) {
+                continue;
+            }
+
+            int toggleX = left + RULE_X + RULE_TOGGLE_OFFSET_X;
+            int toggleY = ruleY + RULE_TOGGLE_OFFSET_Y;
+            if (isInside(mouseX, mouseY, toggleX, toggleY, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE)) {
+                rule.enabled = !rule.enabled;
+                return true;
+            }
+        }
+
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        int left = leftPos();
+        int top = topPos();
+        if (!isInside(mouseX, mouseY, left + RULE_X, top + RULES_VIEWPORT_TOP, RULE_WIDTH, RULES_VIEWPORT_BOTTOM - RULES_VIEWPORT_TOP)) {
+            return super.mouseScrolled(mouseX, mouseY, delta);
+        }
+
+        int maxScroll = maxRuleScroll();
+        if (maxScroll <= 0) {
+            return super.mouseScrolled(mouseX, mouseY, delta);
+        }
+
+        int nextOffset = this.ruleScrollOffset - (int) Math.signum(delta) * RULE_SCROLL_STEP;
+        this.ruleScrollOffset = clamp(nextOffset, 0, maxScroll);
+        return true;
     }
 
     @Override
@@ -210,6 +271,61 @@ public class PawprintScreen extends Screen {
         guiGraphics.blit(TEXTURE, x, y, u, v, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE);
     }
 
+    private void renderRuleBlocks(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+        guiGraphics.enableScissor(left + RULE_X, top + RULES_VIEWPORT_TOP, left + RULE_X + RULE_WIDTH, top + RULES_VIEWPORT_BOTTOM);
+        for (int index = 0; index < this.rules.size(); index++) {
+            RuleEntry rule = this.rules.get(index);
+            int ruleX = left + RULE_X;
+            int ruleY = top + RULE_Y + index * RULE_SPACING_Y - this.ruleScrollOffset;
+            if (!isRuleVisible(top, ruleY)) {
+                continue;
+            }
+
+            guiGraphics.blit(TEXTURE, ruleX, ruleY, RULE_U, RULE_V, RULE_WIDTH, RULE_HEIGHT);
+
+            int toggleX = ruleX + RULE_TOGGLE_OFFSET_X;
+            int toggleY = ruleY + RULE_TOGGLE_OFFSET_Y;
+            renderRuleToggle(guiGraphics, toggleX, toggleY, mouseX, mouseY, rule.enabled);
+            guiGraphics.drawString(this.font, rule.name, ruleX + 5, ruleY + 4, 0xFFFFFF, false);
+        }
+        guiGraphics.disableScissor();
+    }
+
+    private void renderRuleToggle(GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY, boolean enabled) {
+        boolean hover = isInside(mouseX, mouseY, x, y, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE);
+        boolean pressed = hover && this.leftMouseDown;
+        int u;
+        int v;
+        if (enabled) {
+            u = pressed ? RULE_TOGGLE_ON_PRESSED_U : hover ? RULE_TOGGLE_ON_HOVER_U : RULE_TOGGLE_ON_U;
+            v = RULE_TOGGLE_ON_V;
+        } else {
+            u = pressed ? RULE_TOGGLE_OFF_PRESSED_U : hover ? RULE_TOGGLE_OFF_HOVER_U : RULE_TOGGLE_OFF_U;
+            v = RULE_TOGGLE_OFF_V;
+        }
+        guiGraphics.blit(TEXTURE, x, y, u, v, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE);
+    }
+
+    private boolean isRuleVisible(int top, int ruleY) {
+        int viewportTop = top + RULES_VIEWPORT_TOP;
+        int viewportBottom = top + RULES_VIEWPORT_BOTTOM;
+        return ruleY + RULE_HEIGHT > viewportTop && ruleY < viewportBottom;
+    }
+
+    private int maxRuleScroll() {
+        int contentHeight = this.rules.size() * RULE_SPACING_Y;
+        int viewportHeight = RULES_VIEWPORT_BOTTOM - RULES_VIEWPORT_TOP;
+        return Math.max(0, contentHeight - viewportHeight);
+    }
+
+    private static List<RuleEntry> createTestRules() {
+        List<RuleEntry> list = new ArrayList<>();
+        for (int index = 1; index <= 5; index++) {
+            list.add(new RuleEntry("规则" + index));
+        }
+        return list;
+    }
+
     private void updateSlider(double mouseX, int left) {
         int localX = (int) Math.round(mouseX - left - SLIDER_CENTER_OFFSET_X);
         this.sliderCenterX = clamp(localX, TRACK_MIN_CENTER_X, TRACK_MAX_CENTER_X);
@@ -236,5 +352,14 @@ public class PawprintScreen extends Screen {
 
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private static class RuleEntry {
+        private final String name;
+        private boolean enabled;
+
+        private RuleEntry(String name) {
+            this.name = name;
+        }
     }
 }
