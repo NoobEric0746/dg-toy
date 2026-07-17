@@ -5,6 +5,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import org.nooberic.dg_toy.item.PawprintItem;
+import top.theillusivec4.curios.api.SlotResult;
 
 import java.util.List;
 
@@ -16,7 +17,13 @@ public abstract class BasePawprintRuleHandler<TEvent> {
     }
 
     public final void handle(ServerPlayer owner, TEvent event) {
-        ItemStack pawprintStack = PawprintRuleNbtHelper.getOwnerPawprintStack(owner);
+        for (SlotResult pawprintSlot : PawprintRuleNbtHelper.getEquippedPawprints(owner)) {
+            handleEquippedPawprint(owner, event, pawprintSlot);
+        }
+    }
+
+    private void handleEquippedPawprint(ServerPlayer owner, TEvent event, SlotResult pawprintSlot) {
+        ItemStack pawprintStack = pawprintSlot.stack();
         if (pawprintStack.isEmpty() || !PawprintRuleNbtHelper.isRuleEnabled(pawprintStack, getRuleId())) {
             return;
         }
@@ -33,7 +40,8 @@ public abstract class BasePawprintRuleHandler<TEvent> {
             }
 
             long currentTick = owner.serverLevel().getGameTime();
-            if (PawprintRuntimeState.isOnCooldown(owner.getUUID(), getRuleId(), currentTick, getCooldownTicks(context))) {
+            String cooldownId = getRuleId() + "@" + pawprintSlot.slotContext().identifier() + ":" + pawprintSlot.slotContext().index();
+            if (PawprintRuntimeState.isOnCooldown(owner.getUUID(), cooldownId, currentTick, getCooldownTicks(context))) {
                 return;
             }
 
@@ -43,7 +51,7 @@ public abstract class BasePawprintRuleHandler<TEvent> {
             }
 
             if (PawprintEffectExecutor.apply(owner, effect)) {
-                PawprintRuntimeState.markTriggered(owner.getUUID(), getRuleId(), currentTick);
+                PawprintRuntimeState.markTriggered(owner.getUUID(), cooldownId, currentTick);
                 owner.displayClientMessage(Component.literal("爪印规则触发: " + getDisplayName()), true);
                 afterTriggered(context);
             }

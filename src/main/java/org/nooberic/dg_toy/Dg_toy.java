@@ -58,6 +58,8 @@ public class Dg_toy {
             DgToyNetworking.register();
             InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
                     new SlotTypeMessage.Builder("legs").size(1).priority(110).build());
+                InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
+                    new SlotTypeMessage.Builder("pawprint").size(2).priority(110).build());
         });
         LOGGER.info("DGToy common setup");
     }

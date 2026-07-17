@@ -4,6 +4,13 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import org.nooberic.dg_toy.item.PawprintItem;
+import top.theillusivec4.curios.api.CuriosApi;
+import top.theillusivec4.curios.api.SlotContext;
+import top.theillusivec4.curios.api.SlotResult;
+import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class PawprintRuleNbtHelper {
     private static final String RULES_TAG = "PawprintRules";
@@ -11,19 +18,34 @@ public final class PawprintRuleNbtHelper {
     private static final String VARS_TAG = "vars";
     private static final String STRENGTH_TAG = "Strength";
     private static final String HARD_MODE_TAG = "HardMode";
+    private static final String PAWPRINT_SLOT_ID = "pawprint";
     private static final int DEFAULT_STRENGTH = 0;
     private static final boolean DEFAULT_HARD_MODE = true;
 
     private PawprintRuleNbtHelper() {
     }
 
-    public static ItemStack getOwnerPawprintStack(ServerPlayer player) {
-        ItemStack mainHand = player.getMainHandItem();
-        return mainHand.getItem() instanceof PawprintItem ? mainHand : ItemStack.EMPTY;
+    public static List<SlotResult> getEquippedPawprints(ServerPlayer player) {
+        return CuriosApi.getCuriosInventory(player).resolve()
+                .flatMap(handler -> handler.getStacksHandler(PAWPRINT_SLOT_ID))
+                .map(handler -> getPawprintsFromSlots(player, handler))
+                .orElseGet(List::of);
     }
 
-    public static boolean hasOwnerPawprint(ServerPlayer player) {
-        return !getOwnerPawprintStack(player).isEmpty();
+    private static List<SlotResult> getPawprintsFromSlots(ServerPlayer player, ICurioStacksHandler handler) {
+        List<SlotResult> pawprints = new ArrayList<>();
+        for (int index = 0; index < handler.getSlots(); index++) {
+            ItemStack stack = handler.getStacks().getStackInSlot(index);
+            if (stack.getItem() instanceof PawprintItem) {
+                boolean visible = handler.getRenders().size() > index && handler.getRenders().get(index);
+                pawprints.add(new SlotResult(new SlotContext(PAWPRINT_SLOT_ID, player, index, false, visible), stack));
+            }
+        }
+        return pawprints;
+    }
+
+    public static boolean hasEquippedPawprint(ServerPlayer player) {
+        return !getEquippedPawprints(player).isEmpty();
     }
 
     public static int getStrength(ItemStack stack) {
