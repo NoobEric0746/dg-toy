@@ -10,6 +10,10 @@ import java.util.List;
 public abstract class BasePawprintRuleHandler<TEvent> {
     public abstract String getDisplayName();
 
+    public String getDescription() {
+        return "暂无规则描述。";
+    }
+
     public final void handle(ServerPlayer owner, TEvent event) {
         ItemStack pawprintStack = PawprintRuleNbtHelper.getOwnerPawprintStack(owner);
         if (pawprintStack.isEmpty() || !PawprintRuleNbtHelper.isRuleEnabled(pawprintStack, getRuleId())) {

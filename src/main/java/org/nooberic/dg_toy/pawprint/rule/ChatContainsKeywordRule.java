@@ -19,6 +19,11 @@ public final class ChatContainsKeywordRule extends BasePawprintRuleHandler<Serve
     }
 
     @Override
+    public String getDescription() {
+        return "聊天内容包含设置的关键词时触发。";
+    }
+
+    @Override
     public String getRuleId() {
         return RULE_ID;
     }
@@ -47,6 +52,6 @@ public final class ChatContainsKeywordRule extends BasePawprintRuleHandler<Serve
 
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<ServerChatEvent> context) {
-        return new PawprintEffect(1, 40, false, "wave1", 5);
+        return new PawprintEffect(1, 40, false, "chaos", 5);
     }
 }
