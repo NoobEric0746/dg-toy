@@ -35,6 +35,8 @@
 - `matches(context)`：实际判定逻辑，返回 `true` 才允许触发。
 - `resolveEffect(context)`：返回效果；返回 `null` 表示本次不执行效果。
 
+规则注册时还必须指定一个 `PawprintMode`。Pawprint UI 只显示当前爪印模式下注册的规则。
+
 可选覆写：
 
 - `getVariables()`：声明玩家可配置变量。
@@ -281,7 +283,7 @@ protected int getCooldownTicks(PawprintRuleContext<ServerChatEvent> context) {
 在 `PawprintRules.bootstrap()` 中导入并注册：
 
 ```java
-PawprintRuleRegistry.register(new ExampleRule());
+  PawprintRuleRegistry.register(PawprintMode.MOTION, new ExampleRule());
 ```
 
 不注册就不会被分发器获取，UI 里也不会显示。

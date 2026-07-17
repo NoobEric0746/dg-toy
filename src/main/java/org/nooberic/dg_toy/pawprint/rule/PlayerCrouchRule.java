@@ -4,6 +4,7 @@ import net.minecraftforge.event.TickEvent;
 import org.nooberic.dg_toy.pawprint.BasePawprintRuleHandler;
 import org.nooberic.dg_toy.pawprint.PawprintEffect;
 import org.nooberic.dg_toy.pawprint.PawprintRuleContext;
+import org.nooberic.dg_toy.pawprint.PawprintRuleNbtHelper;
 
 public final class PlayerCrouchRule extends BasePawprintRuleHandler<TickEvent.PlayerTickEvent> {
     private static final String RULE_ID = "player_crouch";
@@ -40,6 +41,6 @@ public final class PlayerCrouchRule extends BasePawprintRuleHandler<TickEvent.Pl
 
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<TickEvent.PlayerTickEvent> context) {
-        return new PawprintEffect(3, 40, false, "const", 1);
+        return new PawprintEffect(3, PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "const", 1);
     }
 }

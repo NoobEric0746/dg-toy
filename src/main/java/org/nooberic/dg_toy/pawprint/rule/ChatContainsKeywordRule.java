@@ -52,6 +52,6 @@ public final class ChatContainsKeywordRule extends BasePawprintRuleHandler<Serve
 
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<ServerChatEvent> context) {
-        return new PawprintEffect(1, 40, false, "chaos", 5);
+        return new PawprintEffect(1, PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "chaos", 5);
     }
 }

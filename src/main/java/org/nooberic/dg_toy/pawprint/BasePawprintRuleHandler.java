@@ -4,6 +4,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import org.nooberic.dg_toy.item.PawprintItem;
 
 import java.util.List;
 
@@ -17,6 +18,9 @@ public abstract class BasePawprintRuleHandler<TEvent> {
     public final void handle(ServerPlayer owner, TEvent event) {
         ItemStack pawprintStack = PawprintRuleNbtHelper.getOwnerPawprintStack(owner);
         if (pawprintStack.isEmpty() || !PawprintRuleNbtHelper.isRuleEnabled(pawprintStack, getRuleId())) {
+            return;
+        }
+        if (PawprintRuleRegistry.getMode(this) != PawprintItem.getMode(pawprintStack)) {
             return;
         }
 

@@ -9,6 +9,10 @@ public final class PawprintRuleNbtHelper {
     private static final String RULES_TAG = "PawprintRules";
     private static final String ENABLED_TAG = "enabled";
     private static final String VARS_TAG = "vars";
+    private static final String STRENGTH_TAG = "Strength";
+    private static final String HARD_MODE_TAG = "HardMode";
+    private static final int DEFAULT_STRENGTH = 0;
+    private static final boolean DEFAULT_HARD_MODE = true;
 
     private PawprintRuleNbtHelper() {
     }
@@ -20,6 +24,32 @@ public final class PawprintRuleNbtHelper {
 
     public static boolean hasOwnerPawprint(ServerPlayer player) {
         return !getOwnerPawprintStack(player).isEmpty();
+    }
+
+    public static int getStrength(ItemStack stack) {
+        CompoundTag tag = stack.getOrCreateTag();
+        if (!tag.contains(STRENGTH_TAG)) {
+            tag.putInt(STRENGTH_TAG, DEFAULT_STRENGTH);
+        }
+        int strength = clampStrength(tag.getInt(STRENGTH_TAG));
+        tag.putInt(STRENGTH_TAG, strength);
+        return strength;
+    }
+
+    public static void setStrength(ItemStack stack, int strength) {
+        stack.getOrCreateTag().putInt(STRENGTH_TAG, clampStrength(strength));
+    }
+
+    public static boolean isHardMode(ItemStack stack) {
+        CompoundTag tag = stack.getOrCreateTag();
+        if (!tag.contains(HARD_MODE_TAG)) {
+            tag.putBoolean(HARD_MODE_TAG, DEFAULT_HARD_MODE);
+        }
+        return tag.getBoolean(HARD_MODE_TAG);
+    }
+
+    public static void setHardMode(ItemStack stack, boolean hardMode) {
+        stack.getOrCreateTag().putBoolean(HARD_MODE_TAG, hardMode);
     }
 
     public static CompoundTag getOrCreateRuleTag(ItemStack stack, String ruleId) {
@@ -65,5 +95,9 @@ public final class PawprintRuleNbtHelper {
             varsTag.putString(variable.key(), value);
         }
         return value;
+    }
+
+    private static int clampStrength(int strength) {
+        return Math.max(0, Math.min(100, strength));
     }
 }

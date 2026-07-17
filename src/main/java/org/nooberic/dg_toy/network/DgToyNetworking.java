@@ -87,6 +87,12 @@ public final class DgToyNetworking {
             .consumerMainThread(DgToyC2SPawprintRuleStringVarPacket::handle)
             .add();
 
+        CHANNEL.messageBuilder(DgToyC2SPawprintSettingsSyncPacket.class, 10, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SPawprintSettingsSyncPacket::encode)
+            .decoder(DgToyC2SPawprintSettingsSyncPacket::decode)
+            .consumerMainThread(DgToyC2SPawprintSettingsSyncPacket::handle)
+            .add();
+
         registered = true;
     }
 

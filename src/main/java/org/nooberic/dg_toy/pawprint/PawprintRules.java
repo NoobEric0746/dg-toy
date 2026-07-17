@@ -1,5 +1,6 @@
 package org.nooberic.dg_toy.pawprint;
 
+import org.nooberic.dg_toy.item.PawprintItem.PawprintMode;
 import org.nooberic.dg_toy.pawprint.rule.ChatContainsKeywordRule;
 import org.nooberic.dg_toy.pawprint.rule.ChatNumberEqualsVariablesSumRule;
 import org.nooberic.dg_toy.pawprint.rule.PlayerCrouchRule;
@@ -15,8 +16,8 @@ public final class PawprintRules {
             return;
         }
         initialized = true;
-        PawprintRuleRegistry.register(new ChatContainsKeywordRule());
-        PawprintRuleRegistry.register(new ChatNumberEqualsVariablesSumRule());
-        PawprintRuleRegistry.register(new PlayerCrouchRule());
+        PawprintRuleRegistry.register(PawprintMode.SOUND, new ChatContainsKeywordRule());
+        PawprintRuleRegistry.register(PawprintMode.SOUND, new ChatNumberEqualsVariablesSumRule());
+        PawprintRuleRegistry.register(PawprintMode.MOTION, new PlayerCrouchRule());
     }
 }

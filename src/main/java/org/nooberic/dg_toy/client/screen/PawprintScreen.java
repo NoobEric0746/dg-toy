@@ -11,6 +11,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.nooberic.dg_toy.Dg_toy;
+import org.nooberic.dg_toy.item.PawprintItem;
+import org.nooberic.dg_toy.network.DgToyC2SPawprintSettingsSyncPacket;
 import org.nooberic.dg_toy.network.DgToyC2SPawprintRuleTogglePacket;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.nooberic.dg_toy.pawprint.BasePawprintRuleHandler;
@@ -27,6 +29,11 @@ public class PawprintScreen extends Screen {
 
     private static final int UI_WIDTH = 114;
     private static final int UI_HEIGHT = 132;
+    private static final int ITEM_ICON_X = 4;
+    private static final int ITEM_ICON_Y = 4;
+    private static final int ITEM_ICON_SIZE = 32;
+    private static final int ITEM_NAME_CENTER_X = 71;
+    private static final int ITEM_NAME_CENTER_Y = 10;
 
     private static final int MODE_X = 41;
     private static final int MODE_Y = 25;
@@ -87,9 +94,7 @@ public class PawprintScreen extends Screen {
     private static final int RULES_VIEWPORT_TOP = RULE_Y;
     private static final int RULES_VIEWPORT_BOTTOM = 127;
 
-    private static final String[] PAWPRINT_MODES = {"默认", "模式1", "模式2"};
-
-    private int pawprintModeIndex;
+    private PawprintItem.PawprintMode pawprintMode = PawprintItem.PawprintMode.MOTION;
     private boolean hardMode;
     private int sliderCenterX = TRACK_MIN_CENTER_X;
     private boolean draggingSlider;
@@ -104,6 +109,7 @@ public class PawprintScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        loadStateFromHeldPawprint();
         this.draggingSlider = false;
         this.leftMouseDown = false;
         refreshRules();
@@ -117,6 +123,7 @@ public class PawprintScreen extends Screen {
 
         RenderSystem.enableBlend();
         guiGraphics.blit(TEXTURE, left, top, 0, 0, UI_WIDTH, UI_HEIGHT);
+        renderPawprintIcon(guiGraphics, left, top);
         renderModeButton(guiGraphics, left, top, mouseX, mouseY);
         renderStrengthBar(guiGraphics, left, top);
         renderStrengthModeButtons(guiGraphics, left, top, mouseX, mouseY);
@@ -125,7 +132,9 @@ public class PawprintScreen extends Screen {
         RenderSystem.disableBlend();
 
         renderModeText(guiGraphics, left, top);
+        renderPawprintName(guiGraphics, left, top);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        renderHoverTooltip(guiGraphics, mouseX, mouseY, left, top);
     }
 
     @Override
@@ -149,12 +158,15 @@ public class PawprintScreen extends Screen {
         }
 
         if (button == 0 && isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, MODE_WIDTH, MODE_HEIGHT)) {
-            this.pawprintModeIndex = (this.pawprintModeIndex + 1) % PAWPRINT_MODES.length;
+            this.pawprintMode = this.pawprintMode.next();
+            saveSettingsToHeldPawprint();
+            refreshRules();
             return true;
         }
 
         if (button == 0 && isInside(mouseX, mouseY, left + MODE_BUTTON_X, top + MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE)) {
             this.hardMode = !this.hardMode;
+            saveSettingsToHeldPawprint();
             return true;
         }
 
@@ -215,6 +227,7 @@ public class PawprintScreen extends Screen {
             if (this.draggingSlider) {
                 this.draggingSlider = false;
                 updateSlider(mouseX, leftPos());
+                saveSettingsToHeldPawprint();
                 return true;
             }
         }
@@ -245,7 +258,7 @@ public class PawprintScreen extends Screen {
     }
 
     private void renderModeText(GuiGraphics guiGraphics, int left, int top) {
-        Component text = Component.literal(PAWPRINT_MODES[this.pawprintModeIndex]);
+        Component text = this.pawprintMode.displayName();
         int textWidth = this.font.width(text);
         boolean pressed = this.leftMouseDown && isInside(this.minecraft != null ? this.minecraft.mouseHandler.xpos() * this.minecraft.getWindow().getGuiScaledWidth() / this.minecraft.getWindow().getScreenWidth() : -1,
                 this.minecraft != null ? this.minecraft.mouseHandler.ypos() * this.minecraft.getWindow().getGuiScaledHeight() / this.minecraft.getWindow().getScreenHeight() : -1,
@@ -254,6 +267,17 @@ public class PawprintScreen extends Screen {
         int textX = left + MODE_X + (MODE_WIDTH - textWidth) / 2 + pressedOffset;
         int textY = top + MODE_Y + 2 + pressedOffset;
         guiGraphics.drawString(this.font, text, textX, textY, 0xFFFFFF, false);
+    }
+
+    private void renderPawprintName(GuiGraphics guiGraphics, int left, int top) {
+        ItemStack stack = getHeldPawprintStack();
+        if (stack.isEmpty()) {
+            return;
+        }
+        Component name = stack.getHoverName();
+        int textX = left + ITEM_NAME_CENTER_X - this.font.width(name) / 2;
+        int textY = top + ITEM_NAME_CENTER_Y - this.font.lineHeight / 2;
+        guiGraphics.drawString(this.font, name, textX, textY, 0xFFFFFF, false);
     }
 
     private void renderStrengthBar(GuiGraphics guiGraphics, int left, int top) {
@@ -266,6 +290,20 @@ public class PawprintScreen extends Screen {
         if (darkWidth > 0) {
             guiGraphics.blit(TEXTURE, left + BAR_X + litWidth, top + BAR_Y, BAR_U + litWidth, BAR_DARK_V, darkWidth, BAR_HEIGHT);
         }
+    }
+
+    private void renderPawprintIcon(GuiGraphics guiGraphics, int left, int top) {
+        ItemStack stack = getHeldPawprintStack();
+        if (stack.isEmpty()) {
+            return;
+        }
+
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(left + ITEM_ICON_X, top + ITEM_ICON_Y, 0);
+        guiGraphics.pose().scale(2.0F, 2.0F, 1.0F);
+        guiGraphics.renderItem(stack, 0, 0);
+        guiGraphics.renderItemDecorations(this.font, stack, 0, 0);
+        guiGraphics.pose().popPose();
     }
 
     private void renderSlider(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
@@ -340,12 +378,89 @@ public class PawprintScreen extends Screen {
         this.sliderCenterX = clamp(localX, TRACK_MIN_CENTER_X, TRACK_MAX_CENTER_X);
     }
 
+    private void renderHoverTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY, int left, int top) {
+        if (isInside(mouseX, mouseY, left + ITEM_ICON_X, top + ITEM_ICON_Y, ITEM_ICON_SIZE, ITEM_ICON_SIZE)) {
+            ItemStack stack = getHeldPawprintStack();
+            if (!stack.isEmpty()) {
+                guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY);
+            }
+            return;
+        }
+
+        int sliderX = left + this.sliderCenterX + SLIDER_CENTER_OFFSET_X - (SLIDER_WIDTH / 2);
+        int sliderY = top + TRACK_CENTER_Y - (SLIDER_HEIGHT / 2);
+        if (isInside(mouseX, mouseY, sliderX, sliderY, SLIDER_WIDTH, SLIDER_HEIGHT)) {
+            guiGraphics.renderTooltip(this.font, Component.literal(String.valueOf(sliderXToStrength(this.sliderCenterX))), mouseX, mouseY);
+            return;
+        }
+
+        if (isInside(mouseX, mouseY, left + MODE_BUTTON_X, top + MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE)) {
+            List<Component> tooltip = new ArrayList<>();
+            if (this.hardMode) {
+                tooltip.add(Component.literal("数值强度模式"));
+                tooltip.add(Component.literal("产生的强度等于设置的数值"));
+            } else {
+                tooltip.add(Component.literal("动态强度模式"));
+                tooltip.add(Component.literal("0-33按比例对应感受阈值以下"));
+                tooltip.add(Component.literal("34-66对应感受阈值到疼痛阈值,适合用于奖励"));
+                tooltip.add(Component.literal("67-100对应疼痛阈值到强度上限,适合用于惩罚"));
+                tooltip.add(Component.literal("需要对方提前设置相应数值"));
+            }
+            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+        }
+    }
+
+    private void loadStateFromHeldPawprint() {
+        ItemStack stack = getHeldPawprintStack();
+        if (stack.isEmpty()) {
+            return;
+        }
+        this.hardMode = PawprintRuleNbtHelper.isHardMode(stack);
+        this.sliderCenterX = strengthToSliderX(PawprintRuleNbtHelper.getStrength(stack));
+        this.pawprintMode = PawprintItem.getMode(stack);
+    }
+
+    private void saveSettingsToHeldPawprint() {
+        ItemStack stack = getHeldPawprintStack();
+        if (stack.isEmpty()) {
+            return;
+        }
+        int strength = sliderXToStrength(this.sliderCenterX);
+        PawprintRuleNbtHelper.setStrength(stack, strength);
+        PawprintRuleNbtHelper.setHardMode(stack, this.hardMode);
+        PawprintItem.setMode(stack, this.pawprintMode);
+        DgToyNetworking.sendToServer(new DgToyC2SPawprintSettingsSyncPacket(strength, this.hardMode, this.pawprintMode.id()));
+    }
+
+    private ItemStack getHeldPawprintStack() {
+        Player player = Minecraft.getInstance().player;
+        if (player == null) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack mainHand = player.getMainHandItem();
+        return mainHand.getItem() instanceof PawprintItem ? mainHand : ItemStack.EMPTY;
+    }
+
+    private static int sliderXToStrength(int sliderCenterX) {
+        int range = TRACK_MAX_CENTER_X - TRACK_MIN_CENTER_X;
+        if (range <= 0) {
+            return 0;
+        }
+        return Math.round((sliderCenterX - TRACK_MIN_CENTER_X) * 100.0F / range);
+    }
+
+    private static int strengthToSliderX(int strength) {
+        int clampedStrength = clamp(strength, 0, 100);
+        int range = TRACK_MAX_CENTER_X - TRACK_MIN_CENTER_X;
+        return TRACK_MIN_CENTER_X + Math.round(range * (clampedStrength / 100.0F));
+    }
+
     private void refreshRules() {
         this.rules.clear();
         Player player = Minecraft.getInstance().player;
         ItemStack pawprintStack = player == null ? ItemStack.EMPTY : player.getMainHandItem();
 
-        List<BasePawprintRuleHandler<?>> handlers = new ArrayList<>(PawprintRuleRegistry.allHandlers());
+        List<BasePawprintRuleHandler<?>> handlers = new ArrayList<>(PawprintRuleRegistry.getHandlersForMode(this.pawprintMode));
         handlers.sort(Comparator.comparing(BasePawprintRuleHandler::getDisplayName));
         for (BasePawprintRuleHandler<?> handler : handlers) {
             boolean enabled = !pawprintStack.isEmpty() && PawprintRuleNbtHelper.isRuleEnabled(pawprintStack, handler.getRuleId());
