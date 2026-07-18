@@ -19,36 +19,40 @@ public class PowerboxCurioModel extends HumanoidModel<net.minecraft.world.entity
             new ResourceLocation(Dg_toy.MODID, "powerbox_curio"),
             "main"
     );
+    private final ModelPart bone;
 
     public PowerboxCurioModel(ModelPart root) {
         super(root);
+        this.bone = root.getChild("bone");
     }
 
     public static LayerDefinition createBodyLayer() {
         MeshDefinition meshDefinition = new MeshDefinition();
         PartDefinition partDefinition = meshDefinition.getRoot();
 
-    partDefinition.addOrReplaceChild("head", CubeListBuilder.create(), PartPose.ZERO);
-    partDefinition.addOrReplaceChild("hat", CubeListBuilder.create(), PartPose.ZERO);
-    PartDefinition body = partDefinition.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.ZERO);
-    partDefinition.addOrReplaceChild("right_arm", CubeListBuilder.create(), PartPose.ZERO);
-    partDefinition.addOrReplaceChild("left_arm", CubeListBuilder.create(), PartPose.ZERO);
-    partDefinition.addOrReplaceChild("right_leg", CubeListBuilder.create(), PartPose.ZERO);
-    partDefinition.addOrReplaceChild("left_leg", CubeListBuilder.create(), PartPose.ZERO);
+        // Curios 的 HumanoidModel 渲染辅助需要这些标准节点，即使本饰品不使用它们。
+        partDefinition.addOrReplaceChild("head", CubeListBuilder.create(), PartPose.ZERO);
+        partDefinition.addOrReplaceChild("hat", CubeListBuilder.create(), PartPose.ZERO);
+        partDefinition.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.ZERO);
+        partDefinition.addOrReplaceChild("right_arm", CubeListBuilder.create(), PartPose.ZERO);
+        partDefinition.addOrReplaceChild("left_arm", CubeListBuilder.create(), PartPose.ZERO);
+        partDefinition.addOrReplaceChild("right_leg", CubeListBuilder.create(), PartPose.ZERO);
+        partDefinition.addOrReplaceChild("left_leg", CubeListBuilder.create(), PartPose.ZERO);
 
-    body.addOrReplaceChild(
-        "powerbox",
-                CubeListBuilder.create()
-                .texOffs(18, 15)
-                .addBox(-5.0F, 0.0F, -8.0F, 9.0F, 2.0F, 16.0F, new CubeDeformation(0.0F))
-                .texOffs(19, 0)
-                .addBox(-6.0F, 0.0F, -7.0F, 1.0F, 2.0F, 14.0F, new CubeDeformation(0.0F))
-                .texOffs(19, 1)
-                .addBox(4.0F, 0.0F, -7.0F, 1.0F, 2.0F, 14.0F, new CubeDeformation(0.0F)),
-                PartPose.offset(0.0F, 0.0F, 0.0F)
+        // 由 Blockbench 5.0.4 导出的 powerbox 模型。
+        partDefinition.addOrReplaceChild(
+            "bone",
+            CubeListBuilder.create()
+                .texOffs(0, 0)
+                .addBox(-4.0F, -2.0F, -8.0F, 9.0F, 2.0F, 16.0F, new CubeDeformation(0.0F))
+                .texOffs(0, 18)
+                .addBox(5.0F, -2.0F, -7.0F, 1.0F, 2.0F, 14.0F, new CubeDeformation(0.0F))
+                .texOffs(30, 18)
+                .addBox(-5.0F, -2.0F, -7.0F, 1.0F, 2.0F, 14.0F, new CubeDeformation(0.0F)),
+            PartPose.offsetAndRotation(0.0F, 16.0F, 0.0F, 1.5708F, 0.0F, 0.0F)
         );
 
-        return LayerDefinition.create(meshDefinition, 32, 32);
+        return LayerDefinition.create(meshDefinition, 64, 64);
     }
 
     @Override
@@ -57,6 +61,6 @@ public class PowerboxCurioModel extends HumanoidModel<net.minecraft.world.entity
 
     @Override
     public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        this.body.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
+        this.bone.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
     }
 }

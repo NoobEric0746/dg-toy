@@ -21,10 +21,10 @@ import top.theillusivec4.curios.api.SlotContext;
 @Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class PowerboxCurioRenderer implements ICurioRenderer {
     private static final ResourceLocation TEXTURE = new ResourceLocation(Dg_toy.MODID, "textures/item/powerbox_curio.png");
-    private static final float OFFSET_X = -0.15F;
-    private static final float OFFSET_Y = 0.55F;
-    private static final float OFFSET_Z = 0.0F;
-    private static final float SCALE = 0.45F;
+    private static final float OFFSET_X = -0.05F;
+    private static final float OFFSET_Y = 0.12F;
+    private static final float OFFSET_Z = -0.06F;
+    private static final float SCALE = 0.49F;
     private final PowerboxCurioModel model;
 
     private PowerboxCurioRenderer() {
@@ -62,10 +62,11 @@ public final class PowerboxCurioRenderer implements ICurioRenderer {
     ) {
         ICurioRenderer.followBodyRotations(slotContext.entity(), this.model);
         poseStack.pushPose();
-        ICurioRenderer.translateIfSneaking(poseStack, slotContext.entity());
         this.model.leftLeg.translateAndRotate(poseStack);
         poseStack.translate(OFFSET_X, OFFSET_Y, OFFSET_Z);
         poseStack.scale(SCALE, SCALE, SCALE);
+        poseStack.translate(0.09F, -0.4F, -0.13F);
+        poseStack.scale(0.63F, 0.63F, 0.63F);
         this.model.renderToBuffer(poseStack, buffer.getBuffer(RenderType.entityCutoutNoCull(TEXTURE)), packedLight, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
         poseStack.popPose();
     }
