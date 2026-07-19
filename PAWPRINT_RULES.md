@@ -190,9 +190,14 @@ new PawprintEffect(channel, strength, hardMode, pulseId, duration)
 | `chat_contains_keyword` | 聊天包含关键词 | `ServerChatEvent` | 聊天内容包含 `keyword`。 | channel 1、强度 40、软模式、`chaos`、5 秒。 |
 | `chat_number_equals_variables_sum` | 聊天数字等于变量之和 | `ServerChatEvent` | 聊天文本是整数，且等于变量1至变量6之和。 | channel 1、强度 40、软模式、`chaos`、1 秒。 |
 | `player_crouch` | 玩家下蹲 | `PlayerTickEvent` | 保持下蹲。 | channel 3、强度 40、软模式、`const`、1 秒；冷却当前为 25 tick。 |
+| `must_crouch` | 必须潜行 | `PlayerTickEvent` | 未保持潜行。 | 使用当前爪印强度与硬/软模式、`const`、1 秒；冷却当前为 25 tick。 |
+| `prohibit_movement` | 禁止移动 | `ServerboundMovePlayerPacket` | 客户端移动包中的水平位置发生变化。 | 使用当前爪印强度与硬/软模式、`const`、1 秒；冷却当前为 25 tick。 |
+| `prohibit_sprinting` | 禁止疾跑 | `PlayerTickEvent` | 玩家处于疾跑状态。 | 使用当前爪印强度与硬/软模式、`const`、1 秒；冷却当前为 25 tick。 |
 | `player_hurt_shock` | 受伤电击 | `LivingHurtEvent` | 玩家受到正数伤害。 | channel 3、强度按伤害量从当前爪印设置线性升至设备强度上限、当前硬/软模式、`chaos`、1 秒；20 点伤害及以上使用上限。 |
+| `prohibit_attack` | 禁止攻击 | `AttackEntityEvent` | 玩家攻击生物。 | 使用当前爪印强度与硬/软模式、`chaos`、1 秒。 |
+| `prohibit_interaction` | 禁止交互 | `PlayerInteractEvent` | 玩家右键方块、实体、物品或空中。 | 使用当前爪印强度与硬/软模式、`chaos`、1 秒。 |
 
-注意：`player_crouch` 当前是持续检测规则，只要保持下蹲，经过冷却后会再次施加效果；它不是边沿检测规则。
+注意：`player_crouch`、`must_crouch` 和 `prohibit_sprinting` 当前都是持续检测规则：它们在匹配条件持续成立时按各自冷却间隔重复触发；不是边沿检测规则。`prohibit_movement` 在客户端提交水平位置变化时触发，并使用相同冷却限制重复处罚。
 
 ## 7. Pawprint UI 与同步
 

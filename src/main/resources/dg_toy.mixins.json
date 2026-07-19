@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "dg_toy.refmap.json",
   "mixins": [
+    "ServerGamePacketListenerImplMixin"
   ],
   "client": [
   ],
