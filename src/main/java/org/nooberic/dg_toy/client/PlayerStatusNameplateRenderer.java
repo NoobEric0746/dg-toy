@@ -3,10 +3,10 @@ package org.nooberic.dg_toy.client;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -15,12 +15,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderNameTagEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import org.joml.Matrix4f;
 import org.nooberic.dg_toy.Dg_toy;
 
@@ -126,12 +122,12 @@ public final class PlayerStatusNameplateRenderer {
             float y = -(font.lineHeight - iconSize) / 2.0F;
             float x = startX;
 
-            drawIcon(poseStack, leftIcon, x, y, iconSize);
+            drawIcon(poseStack, bufferSource, leftIcon, x, y, iconSize);
             x += iconSize + ICON_TEXT_GAP;
             drawText(font, matrix, bufferSource, leftText, x, 0.0F, backgroundColor);
             x += font.width(leftText) + GROUP_GAP;
 
-            drawIcon(poseStack, rightIcon, x, y, iconSize);
+            drawIcon(poseStack, bufferSource, rightIcon, x, y, iconSize);
             x += iconSize + ICON_TEXT_GAP;
             drawText(font, matrix, bufferSource, rightText, x, 0.0F, backgroundColor);
         }
@@ -141,20 +137,17 @@ public final class PlayerStatusNameplateRenderer {
             font.drawInBatch(text, x, y, 0xFFFFFFFF, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
         }
 
-        private static void drawIcon(PoseStack poseStack, ResourceLocation fallbackTexture, float x, float y, float size) {
-            RenderSystem.enableBlend();
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-            RenderSystem.setShaderTexture(0, fallbackTexture);
-            var matrix4f = poseStack.last().pose();
-            var buffer = Tesselator.getInstance().getBuilder();
-            buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
-            buffer.vertex(matrix4f, x, y + size, 0.0F).uv(0.0F, 1.0F).endVertex();
-            buffer.vertex(matrix4f, x + size, y + size, 0.0F).uv(1.0F, 1.0F).endVertex();
-            buffer.vertex(matrix4f, x + size, y, 0.0F).uv(1.0F, 0.0F).endVertex();
-            buffer.vertex(matrix4f, x, y, 0.0F).uv(0.0F, 0.0F).endVertex();
-            BufferUploader.drawWithShader(buffer.end());
-            RenderSystem.disableBlend();
+        private static void drawIcon(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, ResourceLocation texture, float x, float y, float size) {
+            Matrix4f matrix = poseStack.last().pose();
+            drawIcon(bufferSource.getBuffer(RenderType.textSeeThrough(texture)), matrix, x, y, size);
+            drawIcon(bufferSource.getBuffer(RenderType.text(texture)), matrix, x, y, size);
+        }
+
+        private static void drawIcon(VertexConsumer buffer, Matrix4f matrix, float x, float y, float size) {
+            buffer.vertex(matrix, x, y + size, 0.0F).color(255, 255, 255, 255).uv(0.0F, 1.0F).uv2(LightTexture.FULL_BRIGHT).endVertex();
+            buffer.vertex(matrix, x + size, y + size, 0.0F).color(255, 255, 255, 255).uv(1.0F, 1.0F).uv2(LightTexture.FULL_BRIGHT).endVertex();
+            buffer.vertex(matrix, x + size, y, 0.0F).color(255, 255, 255, 255).uv(1.0F, 0.0F).uv2(LightTexture.FULL_BRIGHT).endVertex();
+            buffer.vertex(matrix, x, y, 0.0F).color(255, 255, 255, 255).uv(0.0F, 0.0F).uv2(LightTexture.FULL_BRIGHT).endVertex();
         }
     }
 }
