@@ -407,6 +407,31 @@ public class PawprintScreen extends Screen {
                 tooltip.add(Component.literal("需要对方提前设置相应数值"));
             }
             guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+            return;
+        }
+
+        for (int index = 0; index < this.rules.size(); index++) {
+            RuleEntry rule = this.rules.get(index);
+            int ruleX = left + RULE_X;
+            int ruleY = top + RULE_Y + index * RULE_SPACING_Y - this.ruleScrollOffset;
+            if (!isRuleVisible(top, ruleY)) {
+                continue;
+            }
+
+            int toggleX = ruleX + RULE_TOGGLE_OFFSET_X;
+            int toggleY = ruleY + RULE_TOGGLE_OFFSET_Y;
+            if (isInside(mouseX, mouseY, toggleX, toggleY, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE)) {
+                guiGraphics.renderTooltip(this.font, List.of(
+                        Component.literal("左键开启/关闭此规则"),
+                        Component.literal("右键进入详细设置")
+                ), java.util.Optional.empty(), mouseX, mouseY);
+                return;
+            }
+
+            if (isInside(mouseX, mouseY, ruleX, ruleY, RULE_WIDTH, RULE_HEIGHT)) {
+                guiGraphics.renderTooltip(this.font, Component.literal(rule.handler.getDescription()), mouseX, mouseY);
+                return;
+            }
         }
     }
 
