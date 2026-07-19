@@ -190,6 +190,7 @@ new PawprintEffect(channel, strength, hardMode, pulseId, duration)
 | `chat_contains_keyword` | 聊天包含关键词 | `ServerChatEvent` | 聊天内容包含 `keyword`。 | channel 1、强度 40、软模式、`chaos`、5 秒。 |
 | `chat_number_equals_variables_sum` | 聊天数字等于变量之和 | `ServerChatEvent` | 聊天文本是整数，且等于变量1至变量6之和。 | channel 1、强度 40、软模式、`chaos`、1 秒。 |
 | `player_crouch` | 玩家下蹲 | `PlayerTickEvent` | 保持下蹲。 | channel 3、强度 40、软模式、`const`、1 秒；冷却当前为 25 tick。 |
+| `player_hurt_shock` | 受伤电击 | `LivingHurtEvent` | 玩家受到正数伤害。 | channel 3、强度按伤害量从当前爪印设置线性升至设备强度上限、当前硬/软模式、`chaos`、1 秒；20 点伤害及以上使用上限。 |
 
 注意：`player_crouch` 当前是持续检测规则，只要保持下蹲，经过冷却后会再次施加效果；它不是边沿检测规则。
 

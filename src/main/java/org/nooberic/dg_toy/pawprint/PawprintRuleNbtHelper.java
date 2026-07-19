@@ -18,9 +18,11 @@ public final class PawprintRuleNbtHelper {
     private static final String VARS_TAG = "vars";
     private static final String STRENGTH_TAG = "Strength";
     private static final String HARD_MODE_TAG = "HardMode";
+    private static final String CHANNEL_TAG = "Channel";
     private static final String PAWPRINT_SLOT_ID = "pawprint";
     private static final int DEFAULT_STRENGTH = 0;
     private static final boolean DEFAULT_HARD_MODE = true;
+    public static final int DEFAULT_CHANNEL = 3;
 
     private PawprintRuleNbtHelper() {
     }
@@ -74,6 +76,17 @@ public final class PawprintRuleNbtHelper {
         stack.getOrCreateTag().putBoolean(HARD_MODE_TAG, hardMode);
     }
 
+    public static int getChannel(ItemStack stack) {
+        CompoundTag tag = stack.getOrCreateTag();
+        int channel = tag.contains(CHANNEL_TAG) ? clampChannel(tag.getInt(CHANNEL_TAG)) : DEFAULT_CHANNEL;
+        tag.putInt(CHANNEL_TAG, channel);
+        return channel;
+    }
+
+    public static void setChannel(ItemStack stack, int channel) {
+        stack.getOrCreateTag().putInt(CHANNEL_TAG, clampChannel(channel));
+    }
+
     public static CompoundTag getOrCreateRuleTag(ItemStack stack, String ruleId) {
         CompoundTag rootTag = stack.getOrCreateTag();
         CompoundTag rulesTag = rootTag.contains(RULES_TAG, CompoundTag.TAG_COMPOUND)
@@ -121,5 +134,9 @@ public final class PawprintRuleNbtHelper {
 
     private static int clampStrength(int strength) {
         return Math.max(0, Math.min(100, strength));
+    }
+
+    private static int clampChannel(int channel) {
+        return channel >= 1 && channel <= 3 ? channel : DEFAULT_CHANNEL;
     }
 }

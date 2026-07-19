@@ -41,6 +41,6 @@ public final class PlayerCrouchRule extends BasePawprintRuleHandler<TickEvent.Pl
 
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<TickEvent.PlayerTickEvent> context) {
-        return new PawprintEffect(3, PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "const", 1);
+        return new PawprintEffect(PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "const", 1);
     }
 }

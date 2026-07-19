@@ -65,6 +65,15 @@ public class PawprintScreen extends Screen {
     private static final int MODE_BUTTON_X = 92;
     private static final int MODE_BUTTON_Y = 49;
     private static final int MODE_BUTTON_SIZE = 12;
+    private static final int CHANNEL_X = 11;
+    private static final int CHANNEL_Y = 40;
+    private static final int CHANNEL_WIDTH = 17;
+    private static final int CHANNEL_HEIGHT = 9;
+    private static final int CHANNEL_AB_U = 187;
+    private static final int CHANNEL_A_U = 205;
+    private static final int CHANNEL_B_U = 223;
+    private static final int CHANNEL_NORMAL_V = 42;
+    private static final int CHANNEL_HOVER_V = 52;
 
     private static final int SOFT_NORMAL_U = 187;
     private static final int HARD_NORMAL_U = 200;
@@ -96,6 +105,7 @@ public class PawprintScreen extends Screen {
 
     private PawprintItem.PawprintMode pawprintMode = PawprintItem.PawprintMode.MOTION;
     private boolean hardMode;
+    private int selectedChannel = PawprintRuleNbtHelper.DEFAULT_CHANNEL;
     private int sliderCenterX = TRACK_MIN_CENTER_X;
     private boolean draggingSlider;
     private boolean leftMouseDown;
@@ -125,6 +135,7 @@ public class PawprintScreen extends Screen {
         guiGraphics.blit(TEXTURE, left, top, 0, 0, UI_WIDTH, UI_HEIGHT);
         renderPawprintIcon(guiGraphics, left, top);
         renderModeButton(guiGraphics, left, top, mouseX, mouseY);
+        renderChannelButton(guiGraphics, left, top, mouseX, mouseY);
         renderStrengthBar(guiGraphics, left, top);
         renderStrengthModeButtons(guiGraphics, left, top, mouseX, mouseY);
         renderSlider(guiGraphics, left, top, mouseX, mouseY);
@@ -161,6 +172,12 @@ public class PawprintScreen extends Screen {
             this.pawprintMode = this.pawprintMode.next();
             saveSettingsToHeldPawprint();
             refreshRules();
+            return true;
+        }
+
+        if (button == 0 && isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)) {
+            this.selectedChannel = nextChannel(this.selectedChannel);
+            saveSettingsToHeldPawprint();
             return true;
         }
 
@@ -255,6 +272,18 @@ public class PawprintScreen extends Screen {
         int y = top + MODE_Y;
         int v = textureVForState(mouseX, mouseY, x, y, MODE_WIDTH, MODE_HEIGHT, MODE_NORMAL_V, MODE_HOVER_V, MODE_PRESSED_V);
         guiGraphics.blit(TEXTURE, x, y, MODE_U, v, MODE_WIDTH, MODE_HEIGHT);
+    }
+
+    private void renderChannelButton(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+        int x = left + CHANNEL_X;
+        int y = top + CHANNEL_Y;
+        int u = switch (this.selectedChannel) {
+            case 1 -> CHANNEL_A_U;
+            case 2 -> CHANNEL_B_U;
+            default -> CHANNEL_AB_U;
+        };
+        int v = isInside(mouseX, mouseY, x, y, CHANNEL_WIDTH, CHANNEL_HEIGHT) ? CHANNEL_HOVER_V : CHANNEL_NORMAL_V;
+        guiGraphics.blit(TEXTURE, x, y, u, v, CHANNEL_WIDTH, CHANNEL_HEIGHT);
     }
 
     private void renderModeText(GuiGraphics guiGraphics, int left, int top) {
@@ -410,6 +439,11 @@ public class PawprintScreen extends Screen {
             return;
         }
 
+        if (isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)) {
+            guiGraphics.renderTooltip(this.font, Component.literal("通道: " + channelLabel(this.selectedChannel)), mouseX, mouseY);
+            return;
+        }
+
         for (int index = 0; index < this.rules.size(); index++) {
             RuleEntry rule = this.rules.get(index);
             int ruleX = left + RULE_X;
@@ -443,6 +477,7 @@ public class PawprintScreen extends Screen {
         this.hardMode = PawprintRuleNbtHelper.isHardMode(stack);
         this.sliderCenterX = strengthToSliderX(PawprintRuleNbtHelper.getStrength(stack));
         this.pawprintMode = PawprintItem.getMode(stack);
+        this.selectedChannel = PawprintRuleNbtHelper.getChannel(stack);
     }
 
     private void saveSettingsToHeldPawprint() {
@@ -453,8 +488,9 @@ public class PawprintScreen extends Screen {
         int strength = sliderXToStrength(this.sliderCenterX);
         PawprintRuleNbtHelper.setStrength(stack, strength);
         PawprintRuleNbtHelper.setHardMode(stack, this.hardMode);
+        PawprintRuleNbtHelper.setChannel(stack, this.selectedChannel);
         PawprintItem.setMode(stack, this.pawprintMode);
-        DgToyNetworking.sendToServer(new DgToyC2SPawprintSettingsSyncPacket(strength, this.hardMode, this.pawprintMode.id()));
+        DgToyNetworking.sendToServer(new DgToyC2SPawprintSettingsSyncPacket(strength, this.hardMode, this.pawprintMode.id(), this.selectedChannel));
     }
 
     private ItemStack getHeldPawprintStack() {
@@ -478,6 +514,22 @@ public class PawprintScreen extends Screen {
         int clampedStrength = clamp(strength, 0, 100);
         int range = TRACK_MAX_CENTER_X - TRACK_MIN_CENTER_X;
         return TRACK_MIN_CENTER_X + Math.round(range * (clampedStrength / 100.0F));
+    }
+
+    private static int nextChannel(int channel) {
+        return switch (channel) {
+            case 3 -> 1;
+            case 1 -> 2;
+            default -> 3;
+        };
+    }
+
+    private static String channelLabel(int channel) {
+        return switch (channel) {
+            case 1 -> "A";
+            case 2 -> "B";
+            default -> "A+B";
+        };
     }
 
     private void refreshRules() {
