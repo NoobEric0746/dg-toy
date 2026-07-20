@@ -4,7 +4,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
-import org.nooberic.dg_toy.item.PawprintItem;
 import org.nooberic.dg_toy.pawprint.BasePawprintRuleHandler;
 import org.nooberic.dg_toy.pawprint.PawprintRuleNbtHelper;
 import org.nooberic.dg_toy.pawprint.PawprintRuleRegistry;
@@ -42,7 +41,7 @@ public class DgToyC2SPawprintRuleStringVarPacket {
             }
 
             ItemStack mainHand = sender.getMainHandItem();
-            if (!(mainHand.getItem() instanceof PawprintItem)) {
+            if (!PawprintRuleNbtHelper.isRuleDevice(mainHand)) {
                 return;
             }
 

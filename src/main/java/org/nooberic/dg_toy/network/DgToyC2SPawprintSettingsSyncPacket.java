@@ -43,14 +43,16 @@ public class DgToyC2SPawprintSettingsSyncPacket {
             }
 
             ItemStack mainHand = sender.getMainHandItem();
-            if (!(mainHand.getItem() instanceof PawprintItem)) {
+            if (!PawprintRuleNbtHelper.isRuleDevice(mainHand)) {
                 return;
             }
 
             PawprintRuleNbtHelper.setStrength(mainHand, msg.strength);
             PawprintRuleNbtHelper.setHardMode(mainHand, msg.hardMode);
             PawprintRuleNbtHelper.setChannel(mainHand, msg.channel);
-            PawprintItem.setMode(mainHand, PawprintMode.fromId(msg.pawprintModeId));
+            if (mainHand.getItem() instanceof PawprintItem) {
+                PawprintItem.setMode(mainHand, PawprintMode.fromId(msg.pawprintModeId));
+            }
         });
         ctx.setPacketHandled(true);
     }

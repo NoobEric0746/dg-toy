@@ -27,7 +27,7 @@ public abstract class BasePawprintRuleHandler<TEvent> {
         if (pawprintStack.isEmpty() || !PawprintRuleNbtHelper.isRuleEnabled(pawprintStack, getRuleId())) {
             return;
         }
-        if (PawprintRuleRegistry.getMode(this) != PawprintItem.getMode(pawprintStack)) {
+        if (PawprintRuleRegistry.getMode(this) != PawprintRuleNbtHelper.getMode(pawprintStack)) {
             return;
         }
 

@@ -19,7 +19,8 @@ public class PawprintItem extends Item {
     public enum PawprintMode {
         MOTION("motion", "item.dg_toy.pawprint.mode.motion"),
         SOUND("sound", "item.dg_toy.pawprint.mode.sound"),
-        HURT("hurt", "item.dg_toy.pawprint.mode.hurt");
+        HURT("hurt", "item.dg_toy.pawprint.mode.hurt"),
+        COLLAR("collar", "item.dg_toy.dg_collar.mode");
 
         private final String id;
         private final String displayNameKey;
@@ -38,8 +39,11 @@ public class PawprintItem extends Item {
         }
 
         public PawprintMode next() {
-            PawprintMode[] modes = values();
-            return modes[(this.ordinal() + 1) % modes.length];
+            return switch (this) {
+                case MOTION -> SOUND;
+                case SOUND -> HURT;
+                case HURT, COLLAR -> MOTION;
+            };
         }
 
         public static PawprintMode fromId(String id) {

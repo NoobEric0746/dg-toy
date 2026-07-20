@@ -111,9 +111,15 @@ public class PawprintScreen extends Screen {
     private boolean leftMouseDown;
     private final List<RuleEntry> rules = new ArrayList<>();
     private int ruleScrollOffset;
+    private final boolean collarMode;
 
     public PawprintScreen() {
+        this(false);
+    }
+
+    public PawprintScreen(boolean collarMode) {
         super(Component.translatable("screen.dg_toy.pawprint"));
+        this.collarMode = collarMode;
     }
 
     @Override
@@ -168,7 +174,7 @@ public class PawprintScreen extends Screen {
             return true;
         }
 
-        if (button == 0 && isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, MODE_WIDTH, MODE_HEIGHT)) {
+        if (!this.collarMode && button == 0 && isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, MODE_WIDTH, MODE_HEIGHT)) {
             this.pawprintMode = this.pawprintMode.next();
             saveSettingsToHeldPawprint();
             refreshRules();
@@ -476,7 +482,7 @@ public class PawprintScreen extends Screen {
         }
         this.hardMode = PawprintRuleNbtHelper.isHardMode(stack);
         this.sliderCenterX = strengthToSliderX(PawprintRuleNbtHelper.getStrength(stack));
-        this.pawprintMode = PawprintItem.getMode(stack);
+        this.pawprintMode = this.collarMode ? PawprintItem.PawprintMode.COLLAR : PawprintItem.getMode(stack);
         this.selectedChannel = PawprintRuleNbtHelper.getChannel(stack);
     }
 
@@ -489,7 +495,9 @@ public class PawprintScreen extends Screen {
         PawprintRuleNbtHelper.setStrength(stack, strength);
         PawprintRuleNbtHelper.setHardMode(stack, this.hardMode);
         PawprintRuleNbtHelper.setChannel(stack, this.selectedChannel);
-        PawprintItem.setMode(stack, this.pawprintMode);
+        if (!this.collarMode) {
+            PawprintItem.setMode(stack, this.pawprintMode);
+        }
         DgToyNetworking.sendToServer(new DgToyC2SPawprintSettingsSyncPacket(strength, this.hardMode, this.pawprintMode.id(), this.selectedChannel));
     }
 
@@ -499,7 +507,7 @@ public class PawprintScreen extends Screen {
             return ItemStack.EMPTY;
         }
         ItemStack mainHand = player.getMainHandItem();
-        return mainHand.getItem() instanceof PawprintItem ? mainHand : ItemStack.EMPTY;
+        return PawprintRuleNbtHelper.isRuleDevice(mainHand) ? mainHand : ItemStack.EMPTY;
     }
 
     private static int sliderXToStrength(int sliderCenterX) {

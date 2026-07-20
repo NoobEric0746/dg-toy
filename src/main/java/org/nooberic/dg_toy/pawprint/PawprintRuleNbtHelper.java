@@ -3,6 +3,7 @@ package org.nooberic.dg_toy.pawprint;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import org.nooberic.dg_toy.item.ModItems;
 import org.nooberic.dg_toy.item.PawprintItem;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
@@ -20,6 +21,7 @@ public final class PawprintRuleNbtHelper {
     private static final String HARD_MODE_TAG = "HardMode";
     private static final String CHANNEL_TAG = "Channel";
     private static final String PAWPRINT_SLOT_ID = "pawprint";
+    private static final String COLLAR_SLOT_ID = "collar";
     private static final int DEFAULT_STRENGTH = 0;
     private static final boolean DEFAULT_HARD_MODE = true;
     public static final int DEFAULT_CHANNEL = 3;
@@ -28,26 +30,42 @@ public final class PawprintRuleNbtHelper {
     }
 
     public static List<SlotResult> getEquippedPawprints(ServerPlayer player) {
-        return CuriosApi.getCuriosInventory(player).resolve()
+        List<SlotResult> ruleDevices = new ArrayList<>();
+        CuriosApi.getCuriosInventory(player).resolve()
                 .flatMap(handler -> handler.getStacksHandler(PAWPRINT_SLOT_ID))
-                .map(handler -> getPawprintsFromSlots(player, handler))
-                .orElseGet(List::of);
+                .ifPresent(handler -> ruleDevices.addAll(getRuleDevicesFromSlots(player, handler, PAWPRINT_SLOT_ID)));
+        CuriosApi.getCuriosInventory(player).resolve()
+                .flatMap(handler -> handler.getStacksHandler(COLLAR_SLOT_ID))
+                .ifPresent(handler -> ruleDevices.addAll(getRuleDevicesFromSlots(player, handler, COLLAR_SLOT_ID)));
+        return List.copyOf(ruleDevices);
     }
 
-    private static List<SlotResult> getPawprintsFromSlots(ServerPlayer player, ICurioStacksHandler handler) {
-        List<SlotResult> pawprints = new ArrayList<>();
+    private static List<SlotResult> getRuleDevicesFromSlots(ServerPlayer player, ICurioStacksHandler handler, String slotId) {
+        List<SlotResult> ruleDevices = new ArrayList<>();
         for (int index = 0; index < handler.getSlots(); index++) {
             ItemStack stack = handler.getStacks().getStackInSlot(index);
-            if (stack.getItem() instanceof PawprintItem) {
+            if (isRuleDevice(stack)) {
                 boolean visible = handler.getRenders().size() > index && handler.getRenders().get(index);
-                pawprints.add(new SlotResult(new SlotContext(PAWPRINT_SLOT_ID, player, index, false, visible), stack));
+                ruleDevices.add(new SlotResult(new SlotContext(slotId, player, index, false, visible), stack));
             }
         }
-        return pawprints;
+        return ruleDevices;
     }
 
     public static boolean hasEquippedPawprint(ServerPlayer player) {
         return !getEquippedPawprints(player).isEmpty();
+    }
+
+    public static boolean isRuleDevice(ItemStack stack) {
+        return stack.getItem() instanceof PawprintItem || stack.is(ModItems.DG_COLLAR.get());
+    }
+
+    public static boolean isCollar(ItemStack stack) {
+        return stack.is(ModItems.DG_COLLAR.get());
+    }
+
+    public static PawprintItem.PawprintMode getMode(ItemStack stack) {
+        return isCollar(stack) ? PawprintItem.PawprintMode.COLLAR : PawprintItem.getMode(stack);
     }
 
     public static int getStrength(ItemStack stack) {
