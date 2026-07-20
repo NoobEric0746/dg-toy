@@ -6,6 +6,7 @@
   "item.dg_toy.pawprint.mode.sound": "声音检测",
   "item.dg_toy.pawprint.mode.hurt": "受伤检测",
   "item.dg_toy.powerbox": "郊狼主机",
+  "item.dg_toy.dg_collar": "郊狼项圈",
   "item.dg_toy.remote_control": "遥控器",
   "item.dg_toy.remote_control.desc": "用于后续扩展的控制设备",
   "item.dg_toy.remote_control.bound_player": "已绑定玩家: %s",

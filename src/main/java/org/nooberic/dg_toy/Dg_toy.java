@@ -17,6 +17,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import top.theillusivec4.curios.api.SlotTypeMessage;
+import org.nooberic.dg_toy.client.DgCollarCurioRenderer;
 import org.nooberic.dg_toy.client.PawprintCurioRenderer;
 import org.nooberic.dg_toy.client.PowerboxCurioRenderer;
 import org.nooberic.dg_toy.item.ModItems;
@@ -38,6 +39,7 @@ public class Dg_toy {
             .displayItems((parameters, output) -> {
                 output.accept(ModItems.PAWPRINT.get());
                 output.accept(ModItems.POWERBOX.get());
+                output.accept(ModItems.DG_COLLAR.get());
                 output.accept(ModItems.REMOTE_CONTROL.get());
             })
             .build());
@@ -49,6 +51,7 @@ public class Dg_toy {
         DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
             PowerboxCurioRenderer.register(modEventBus);
             PawprintCurioRenderer.register(modEventBus);
+            DgCollarCurioRenderer.register(modEventBus);
         });
 
         ModItems.ITEMS.register(modEventBus);
@@ -64,6 +67,8 @@ public class Dg_toy {
                     new SlotTypeMessage.Builder("legs").size(1).priority(110).build());
                 InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
                     new SlotTypeMessage.Builder("pawprint").size(2).priority(110).build());
+                InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
+                    new SlotTypeMessage.Builder("collar").size(1).priority(110).build());
         });
         LOGGER.info("DGToy common setup");
     }
