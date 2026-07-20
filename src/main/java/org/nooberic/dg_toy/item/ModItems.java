@@ -12,6 +12,7 @@ public final class ModItems {
     public static final RegistryObject<Item> PAWPRINT = ITEMS.register("pawprint", PawprintItem::new);
     public static final RegistryObject<Item> POWERBOX = ITEMS.register("powerbox", PowerboxItem::new);
     public static final RegistryObject<Item> DG_COLLAR = ITEMS.register("dg_collar", DgCollarItem::new);
+    public static final RegistryObject<Item> DG_BEACON = ITEMS.register("dg_beacon", DgBeaconItem::new);
     public static final RegistryObject<Item> REMOTE_CONTROL = ITEMS.register("remote_control", RemoteControlItem::new);
 
     private ModItems() {
