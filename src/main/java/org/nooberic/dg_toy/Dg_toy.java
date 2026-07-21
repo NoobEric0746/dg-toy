@@ -20,6 +20,8 @@ import top.theillusivec4.curios.api.SlotTypeMessage;
 import org.nooberic.dg_toy.client.DgCollarCurioRenderer;
 import org.nooberic.dg_toy.client.PawprintCurioRenderer;
 import org.nooberic.dg_toy.client.PowerboxCurioRenderer;
+import org.nooberic.dg_toy.block.ModBlocks;
+import org.nooberic.dg_toy.block.entity.ModBlockEntities;
 import org.nooberic.dg_toy.item.ModItems;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.nooberic.dg_toy.pawprint.PawprintRules;
@@ -55,6 +57,8 @@ public class Dg_toy {
             DgCollarCurioRenderer.register(modEventBus);
         });
 
+        ModBlocks.BLOCKS.register(modEventBus);
+        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
 

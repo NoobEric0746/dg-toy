@@ -12,6 +12,7 @@
   "item.dg_toy.dg_collar.activated": "项圈已激活，UUID: %s",
   "item.dg_toy.dg_collar.uuid": "项圈 UUID: %s",
   "item.dg_toy.dg_beacon": "项圈控制器",
+  "block.dg_toy.dg_beacon": "项圈控制器",
   "item.dg_toy.dg_beacon.unbound": "未绑定项圈",
   "item.dg_toy.dg_beacon.bound_uuid": "已保存项圈 UUID: %s",
   "item.dg_toy.dg_beacon.bound": "已保存项圈 UUID: %s",

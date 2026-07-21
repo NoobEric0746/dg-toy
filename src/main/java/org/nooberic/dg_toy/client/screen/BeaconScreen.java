@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Player;
@@ -11,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.nooberic.dg_toy.Dg_toy;
+import org.nooberic.dg_toy.block.entity.DgBeaconBlockEntity;
 import org.nooberic.dg_toy.item.DgBeaconItem;
 import org.nooberic.dg_toy.item.ModItems;
 import org.nooberic.dg_toy.network.DgToyC2SBeaconDistanceLimitsSyncPacket;
@@ -48,15 +50,25 @@ public class BeaconScreen extends Screen {
     private int maximumDistanceLimitStep = 13;
     private DraggedSlider draggedSlider;
     private double dragGrabOffsetX;
+    private final BlockPos blockPos;
 
     public BeaconScreen() {
+        this((BlockPos) null);
+    }
+
+    public BeaconScreen(DgBeaconBlockEntity beacon) {
+        this(beacon.getBlockPos());
+    }
+
+    private BeaconScreen(BlockPos blockPos) {
         super(Component.translatable("item.dg_toy.dg_beacon"));
+        this.blockPos = blockPos;
     }
 
     @Override
     protected void init() {
         super.init();
-        ItemStack stack = getHeldBeaconStack();
+        ItemStack stack = getBeaconStack();
         if (!stack.isEmpty()) {
             this.minimumDistanceLimitStep = distanceLimitToStep(DgBeaconItem.getMinimumDistanceLimit(stack));
             this.maximumDistanceLimitStep = distanceLimitToStep(DgBeaconItem.getMaximumDistanceLimit(stack));
@@ -134,7 +146,7 @@ public class BeaconScreen extends Screen {
     }
 
     private void renderBeaconIcon(GuiGraphics guiGraphics, int left, int top) {
-        ItemStack stack = getHeldBeaconStack();
+        ItemStack stack = getBeaconStack();
         if (stack.isEmpty()) {
             return;
         }
@@ -148,7 +160,7 @@ public class BeaconScreen extends Screen {
     }
 
     private void renderBeaconName(GuiGraphics guiGraphics, int left, int top) {
-        ItemStack stack = getHeldBeaconStack();
+        ItemStack stack = getBeaconStack();
         if (stack.isEmpty()) {
             return;
         }
@@ -219,7 +231,7 @@ public class BeaconScreen extends Screen {
             return;
         }
         if (isInside(mouseX, mouseY, left + ITEM_ICON_X, top + ITEM_ICON_Y, 32, 32)) {
-            ItemStack stack = getHeldBeaconStack();
+            ItemStack stack = getBeaconStack();
             if (!stack.isEmpty()) {
                 guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY);
             }
@@ -239,15 +251,33 @@ public class BeaconScreen extends Screen {
     }
 
     private void saveDistanceLimits() {
-        ItemStack stack = getHeldBeaconStack();
-        if (stack.isEmpty()) {
-            return;
-        }
-
         int minimumDistanceLimit = stepToDistanceLimit(this.minimumDistanceLimitStep);
         int maximumDistanceLimit = stepToDistanceLimit(this.maximumDistanceLimitStep);
-        DgBeaconItem.setDistanceLimits(stack, minimumDistanceLimit, maximumDistanceLimit);
-        DgToyNetworking.sendToServer(new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit));
+        if (this.blockPos == null) {
+            ItemStack stack = getHeldBeaconStack();
+            if (stack.isEmpty()) {
+                return;
+            }
+            DgBeaconItem.setDistanceLimits(stack, minimumDistanceLimit, maximumDistanceLimit);
+            DgToyNetworking.sendToServer(new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit));
+        } else {
+            DgToyNetworking.sendToServer(new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit, this.blockPos));
+        }
+    }
+
+    private ItemStack getBeaconStack() {
+        if (this.blockPos == null) {
+            return getHeldBeaconStack();
+        }
+
+        if (!(Minecraft.getInstance().level.getBlockEntity(this.blockPos) instanceof DgBeaconBlockEntity beacon)) {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack stack = new ItemStack(ModItems.DG_BEACON.get());
+        DgBeaconItem.setCollarUuid(stack, beacon.getCollarUuid());
+        DgBeaconItem.setDistanceLimits(stack, beacon.getMinimumDistanceLimit(), beacon.getMaximumDistanceLimit());
+        return stack;
     }
 
     private static ItemStack getHeldBeaconStack() {
