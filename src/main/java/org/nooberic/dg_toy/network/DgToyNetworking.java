@@ -93,6 +93,12 @@ public final class DgToyNetworking {
             .consumerMainThread(DgToyC2SPawprintSettingsSyncPacket::handle)
             .add();
 
+        CHANNEL.messageBuilder(DgToyC2SBeaconDistanceLimitsSyncPacket.class, 11, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SBeaconDistanceLimitsSyncPacket::encode)
+            .decoder(DgToyC2SBeaconDistanceLimitsSyncPacket::decode)
+            .consumerMainThread(DgToyC2SBeaconDistanceLimitsSyncPacket::handle)
+            .add();
+
         registered = true;
     }
 
