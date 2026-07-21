@@ -3,6 +3,7 @@ package org.nooberic.dg_toy.pawprint;
 import org.nooberic.dg_toy.item.PawprintItem.PawprintMode;
 import org.nooberic.dg_toy.pawprint.rule.ChatContainsKeywordRule;
 import org.nooberic.dg_toy.pawprint.rule.ChatNumberEqualsVariablesSumRule;
+import org.nooberic.dg_toy.pawprint.rule.BeaconDistanceShockRule;
 import org.nooberic.dg_toy.pawprint.rule.PlayerCrouchRule;
 import org.nooberic.dg_toy.pawprint.rule.PlayerAttackMobShockRule;
 import org.nooberic.dg_toy.pawprint.rule.PlayerHurtShockRule;
@@ -31,5 +32,6 @@ public final class PawprintRules {
         PawprintRuleRegistry.register(PawprintMode.MOTION, new PlayerRightClickShockRule());
         PawprintRuleRegistry.register(PawprintMode.MOTION, new PlayerMustStayStillRule());
         PawprintRuleRegistry.register(PawprintMode.HURT, new PlayerHurtShockRule());
+        PawprintRuleRegistry.register(PawprintMode.COLLAR, new BeaconDistanceShockRule());
     }
 }

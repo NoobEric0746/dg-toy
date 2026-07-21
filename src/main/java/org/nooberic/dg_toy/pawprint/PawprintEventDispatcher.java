@@ -10,6 +10,8 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.nooberic.dg_toy.Dg_toy;
+import org.nooberic.dg_toy.event.DgBeaconSignalEvent;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 @Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class PawprintEventDispatcher {
@@ -32,6 +34,19 @@ public final class PawprintEventDispatcher {
 
         for (BasePawprintRuleHandler<TickEvent.PlayerTickEvent> handler : PawprintRuleRegistry.getHandlers(TickEvent.PlayerTickEvent.class)) {
             handler.handle(owner, event);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onDgBeaconSignal(DgBeaconSignalEvent event) {
+        if (ServerLifecycleHooks.getCurrentServer() == null) {
+            return;
+        }
+
+        for (ServerPlayer owner : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
+            for (BasePawprintRuleHandler<DgBeaconSignalEvent> handler : PawprintRuleRegistry.getHandlers(DgBeaconSignalEvent.class)) {
+                handler.handle(owner, event);
+            }
         }
     }
 

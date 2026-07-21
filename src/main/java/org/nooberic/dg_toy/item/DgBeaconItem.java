@@ -101,7 +101,7 @@ public class DgBeaconItem extends Item {
     }
 
     @Nullable
-    private static UUID getCollarUuid(ItemStack stack) {
+    public static UUID getCollarUuid(ItemStack stack) {
         CompoundTag tag = stack.getTag();
         return tag != null && tag.hasUUID(COLLAR_UUID_TAG) ? tag.getUUID(COLLAR_UUID_TAG) : null;
     }
