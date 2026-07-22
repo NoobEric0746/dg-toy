@@ -12,6 +12,8 @@ public final class ModBlockEntities {
 
     public static final RegistryObject<BlockEntityType<DgBeaconBlockEntity>> DG_BEACON = BLOCK_ENTITIES.register("dg_beacon", () ->
             BlockEntityType.Builder.of(DgBeaconBlockEntity::new, ModBlocks.DG_BEACON.get()).build(null));
+        public static final RegistryObject<BlockEntityType<RedstoneControllerBlockEntity>> REDSTONE_CONTROLLER = BLOCK_ENTITIES.register("redstone_controller", () ->
+            BlockEntityType.Builder.of(RedstoneControllerBlockEntity::new, ModBlocks.REDSTONE_CONTROLLER.get()).build(null));
 
     private ModBlockEntities() {
     }

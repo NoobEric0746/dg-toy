@@ -15,6 +15,10 @@ public final class ModBlocks {
             new DgBeaconBlock(BlockBehaviour.Properties.of()
                 .strength(1.5F, 6.0F)
                 .pushReaction(PushReaction.BLOCK)));
+    public static final RegistryObject<Block> REDSTONE_CONTROLLER = BLOCKS.register("redstone_controller", () ->
+            new RedstoneControllerBlock(BlockBehaviour.Properties.of()
+                .strength(3.5F)
+                    .pushReaction(PushReaction.BLOCK)));
 
     private ModBlocks() {
     }

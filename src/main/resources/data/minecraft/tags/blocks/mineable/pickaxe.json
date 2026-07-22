@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "dg_toy:dg_beacon"
+    "dg_toy:dg_beacon",
+    "dg_toy:redstone_controller"
   ]
 }

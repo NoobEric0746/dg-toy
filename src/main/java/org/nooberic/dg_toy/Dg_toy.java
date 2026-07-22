@@ -46,6 +46,7 @@ public class Dg_toy {
                 output.accept(ModItems.POWERBOX.get());
                 output.accept(ModItems.DG_COLLAR.get());
                 output.accept(ModItems.DG_BEACON.get());
+                output.accept(ModItems.REDSTONE_CONTROLLER.get());
                 output.accept(ModItems.REMOTE_CONTROL.get());
             })
             .build());
