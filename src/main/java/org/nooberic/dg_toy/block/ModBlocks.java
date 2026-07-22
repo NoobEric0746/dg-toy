@@ -19,6 +19,11 @@ public final class ModBlocks {
             new RedstoneControllerBlock(BlockBehaviour.Properties.of()
                 .strength(3.5F)
                     .pushReaction(PushReaction.BLOCK)));
+    public static final RegistryObject<Block> ELECTRIFIED_WIRE_NETTING = BLOCKS.register("electrified_wire_netting", () ->
+            new ElectrifiedWireNettingBlock(BlockBehaviour.Properties.of()
+                    .strength(1.0F)
+                    .noOcclusion()
+                    .pushReaction(PushReaction.BLOCK)));
 
     private ModBlocks() {
     }

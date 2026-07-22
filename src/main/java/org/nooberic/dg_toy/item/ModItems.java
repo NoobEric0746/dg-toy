@@ -15,8 +15,10 @@ public final class ModItems {
     public static final RegistryObject<Item> POWERBOX = ITEMS.register("powerbox", PowerboxItem::new);
     public static final RegistryObject<Item> DG_COLLAR = ITEMS.register("dg_collar", DgCollarItem::new);
     public static final RegistryObject<Item> DG_BEACON = ITEMS.register("dg_beacon", () -> new DgBeaconItem(ModBlocks.DG_BEACON.get()));
-        public static final RegistryObject<Item> REDSTONE_CONTROLLER = ITEMS.register("redstone_controller", () ->
+    public static final RegistryObject<Item> REDSTONE_CONTROLLER = ITEMS.register("redstone_controller", () ->
             new BlockItem(ModBlocks.REDSTONE_CONTROLLER.get(), new Item.Properties()));
+    public static final RegistryObject<Item> ELECTRIFIED_WIRE_NETTING = ITEMS.register("electrified_wire_netting", () ->
+            new BlockItem(ModBlocks.ELECTRIFIED_WIRE_NETTING.get(), new Item.Properties()));
     public static final RegistryObject<Item> REMOTE_CONTROL = ITEMS.register("remote_control", RemoteControlItem::new);
 
     private ModItems() {

@@ -16,6 +16,8 @@
   "block.dg_toy.dg_beacon": "项圈控制器",
   "item.dg_toy.redstone_controller": "红石遥控器",
   "block.dg_toy.redstone_controller": "红石遥控器",
+  "item.dg_toy.electrified_wire_netting": "电网",
+  "block.dg_toy.electrified_wire_netting": "电网",
   "item.dg_toy.dg_beacon.unbound": "未绑定项圈",
   "item.dg_toy.dg_beacon.bound_uuid": "已保存项圈 UUID: %s",
   "item.dg_toy.dg_beacon.bound": "已保存项圈 UUID: %s",

@@ -20,6 +20,7 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 import top.theillusivec4.curios.api.SlotTypeMessage;
 import org.nooberic.dg_toy.client.DgCollarCurioRenderer;
+import org.nooberic.dg_toy.client.ModClientEvents;
 import org.nooberic.dg_toy.client.PawprintCurioRenderer;
 import org.nooberic.dg_toy.client.PowerboxCurioRenderer;
 import org.nooberic.dg_toy.block.ModBlocks;
@@ -47,6 +48,7 @@ public class Dg_toy {
                 output.accept(ModItems.DG_COLLAR.get());
                 output.accept(ModItems.DG_BEACON.get());
                 output.accept(ModItems.REDSTONE_CONTROLLER.get());
+                output.accept(ModItems.ELECTRIFIED_WIRE_NETTING.get());
                 output.accept(ModItems.REMOTE_CONTROL.get());
             })
             .build());
@@ -60,6 +62,7 @@ public class Dg_toy {
             PowerboxCurioRenderer.register(modEventBus);
             PawprintCurioRenderer.register(modEventBus);
             DgCollarCurioRenderer.register(modEventBus);
+            ModClientEvents.register(modEventBus);
         });
 
         ModBlocks.BLOCKS.register(modEventBus);
