@@ -99,6 +99,12 @@ public final class DgToyNetworking {
             .consumerMainThread(DgToyC2SBeaconDistanceLimitsSyncPacket::handle)
             .add();
 
+        CHANNEL.messageBuilder(DgToyC2SRedstoneControllerSettingsSyncPacket.class, 12, NetworkDirection.PLAY_TO_SERVER)
+            .encoder(DgToyC2SRedstoneControllerSettingsSyncPacket::encode)
+            .decoder(DgToyC2SRedstoneControllerSettingsSyncPacket::decode)
+            .consumerMainThread(DgToyC2SRedstoneControllerSettingsSyncPacket::handle)
+            .add();
+
         registered = true;
     }
 
