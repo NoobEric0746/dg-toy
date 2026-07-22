@@ -2,6 +2,7 @@ package org.nooberic.dg_toy.pawprint;
 
 import net.minecraft.server.level.ServerPlayer;
 import org.nooberic.dg_toy.server.RemoteControlStateHelper;
+import org.nooberic.dg_toy.server.ShockEffectHelper;
 
 public final class PawprintEffectExecutor {
     private PawprintEffectExecutor() {
@@ -12,12 +13,7 @@ public final class PawprintEffectExecutor {
             return false;
         }
 
-        org.nooberic.dglib.multiplayer.ServerCoyote coyote = org.nooberic.dglib.multiplayer.DgServerCoyoteApi.get().getCoyote(player);
-        if (effect.hardMode()) {
-            coyote.control(channel, effect.strength(), effect.pulseId(), effect.duration());
-        } else {
-            coyote.controlSoft(channel, effect.strength(), effect.pulseId(), effect.duration());
-        }
+        ShockEffectHelper.apply(player, effect.hardMode(), channel, effect.strength(), effect.pulseId(), effect.duration());
         return true;
     }
 }

@@ -32,6 +32,7 @@ import org.nooberic.dg_toy.server.PlayerConnectionSyncManager;
 import org.nooberic.dg_toy.server.PlayerPairingData;
 import org.nooberic.dg_toy.server.PlayerStatusBroadcaster;
 import org.nooberic.dg_toy.server.RemoteControlStateHelper;
+import org.nooberic.dg_toy.server.ShockEffectHelper;
 import org.nooberic.dg_toy.server.VirtualPairingManager;
 
 import java.util.ArrayList;
@@ -510,15 +511,10 @@ public class RemoteControlItem extends Item {
             return false;
         }
 
-        org.nooberic.dglib.multiplayer.ServerCoyote coyote = org.nooberic.dglib.multiplayer.DgServerCoyoteApi.get().getCoyote(targetPlayer);
         int channel = getSavedShockChannel(stack);
         int strength = getSavedShockStrength(stack);
         int duration = getSavedShockDuration(stack);
-        if (isSavedShockHardMode(stack)) {
-            coyote.control(channel, strength, pulseId, duration);
-        } else {
-            coyote.controlSoft(channel, strength, pulseId, duration);
-        }
+        ShockEffectHelper.apply(targetPlayer, isSavedShockHardMode(stack), channel, strength, pulseId, duration);
         return true;
     }
 

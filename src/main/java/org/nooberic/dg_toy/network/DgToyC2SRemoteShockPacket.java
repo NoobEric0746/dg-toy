@@ -4,10 +4,9 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
-import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
-import org.nooberic.dglib.multiplayer.ServerCoyote;
 import org.nooberic.dg_toy.item.RemoteControlItem;
 import org.nooberic.dg_toy.server.RemoteControlStateHelper;
+import org.nooberic.dg_toy.server.ShockEffectHelper;
 
 import java.util.function.Supplier;
 
@@ -54,12 +53,7 @@ public class DgToyC2SRemoteShockPacket {
             int duration = RemoteControlItem.getDuration(stack);
             int channel = RemoteControlItem.getChannel(stack);
             boolean hardMode = RemoteControlItem.isHardMode(stack);
-            ServerCoyote coyote = DgServerCoyoteApi.get().getCoyote(targetPlayer);
-            if (hardMode) {
-                coyote.control(channel, strength, pulseId, duration);
-            } else {
-                coyote.controlSoft(channel, strength, pulseId, duration);
-            }
+            ShockEffectHelper.apply(targetPlayer, hardMode, channel, strength, pulseId, duration);
         });
         ctx.setPacketHandled(true);
     }

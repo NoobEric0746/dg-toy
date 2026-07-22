@@ -13,9 +13,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.nooberic.dglib.client.particle.DgParticleTypes;
-import org.nooberic.dglib.multiplayer.DgServerCoyoteApi;
 import org.nooberic.dg_toy.config.DgToyConfig;
 import org.nooberic.dg_toy.server.RemoteControlStateHelper;
+import org.nooberic.dg_toy.server.ShockEffectHelper;
 
 public class ElectrifiedWireNettingBlock extends Block {
     private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 1, 16);
@@ -25,7 +25,6 @@ public class ElectrifiedWireNettingBlock extends Block {
     private static final int BOTH_CHANNELS = 3;
     private static final int SHOCK_DURATION_SECONDS = 1;
     private static final String SHOCK_PULSE_ID = "chaos";
-    private static final String LAST_CONTACT_POS_TAG = "dg_toy.electrified_wire_netting.last_contact_pos";
     private static final String LAST_CONTACT_TICK_TAG = "dg_toy.electrified_wire_netting.last_contact_tick";
     private static final String LAST_SHOCK_TICK_TAG = "dg_toy.electrified_wire_netting.last_shock_tick";
 
@@ -52,11 +51,8 @@ public class ElectrifiedWireNettingBlock extends Block {
 
         long gameTime = level.getGameTime();
         CompoundTag persistentData = player.getPersistentData();
-        long packedPos = pos.asLong();
-        boolean enteredNetting = persistentData.getLong(LAST_CONTACT_POS_TAG) != packedPos
-                || persistentData.getLong(LAST_CONTACT_TICK_TAG) != gameTime - 1;
+        boolean enteredNetting = persistentData.getLong(LAST_CONTACT_TICK_TAG) != gameTime - 1;
 
-        persistentData.putLong(LAST_CONTACT_POS_TAG, packedPos);
         persistentData.putLong(LAST_CONTACT_TICK_TAG, gameTime);
         if (enteredNetting) {
             shockPlayer(player, gameTime);
@@ -111,11 +107,18 @@ public class ElectrifiedWireNettingBlock extends Block {
 
     private static void shockPlayer(ServerPlayer player, long gameTime) {
         CompoundTag persistentData = player.getPersistentData();
-        if (persistentData.getLong(LAST_SHOCK_TICK_TAG) == gameTime
-                || !RemoteControlStateHelper.isShockAvailable(player)) {
+        if (!RemoteControlStateHelper.isShockAvailable(player)) {
             return;
         }
-        DgServerCoyoteApi.get().getCoyote(player).controlSoft(
+
+        if (persistentData.contains(LAST_SHOCK_TICK_TAG)
+                && gameTime - persistentData.getLong(LAST_SHOCK_TICK_TAG) < SHOCK_INTERVAL_TICKS) {
+            return;
+        }
+
+        ShockEffectHelper.apply(
+            player,
+            false,
                 BOTH_CHANNELS,
                 DgToyConfig.ELECTRIFIED_WIRE_NETTING_STRENGTH.get(),
                 SHOCK_PULSE_ID,
