@@ -10,6 +10,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.nooberic.dg_toy.Dg_toy;
+import org.nooberic.dg_toy.config.DgToyConfig;
 import org.nooberic.dg_toy.event.DgBeaconSignalEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
@@ -43,7 +44,12 @@ public final class PawprintEventDispatcher {
             return;
         }
 
+        double signalRange = DgToyConfig.BEACON_SIGNAL_RANGE.get();
+        double signalRangeSqr = signalRange * signalRange;
         for (ServerPlayer owner : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
+            if (owner.position().distanceToSqr(event.getSourcePosition()) > signalRangeSqr) {
+                continue;
+            }
             for (BasePawprintRuleHandler<DgBeaconSignalEvent> handler : PawprintRuleRegistry.getHandlers(DgBeaconSignalEvent.class)) {
                 handler.handle(owner, event);
             }

@@ -7,6 +7,8 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.InterModComms;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -22,6 +24,7 @@ import org.nooberic.dg_toy.client.PawprintCurioRenderer;
 import org.nooberic.dg_toy.client.PowerboxCurioRenderer;
 import org.nooberic.dg_toy.block.ModBlocks;
 import org.nooberic.dg_toy.block.entity.ModBlockEntities;
+import org.nooberic.dg_toy.config.DgToyConfig;
 import org.nooberic.dg_toy.item.ModItems;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.nooberic.dg_toy.pawprint.PawprintRules;
@@ -49,6 +52,7 @@ public class Dg_toy {
 
     public Dg_toy() {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DgToyConfig.SPEC);
 
         modEventBus.addListener(this::commonSetup);
         DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {

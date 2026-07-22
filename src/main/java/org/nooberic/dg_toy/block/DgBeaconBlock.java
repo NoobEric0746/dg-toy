@@ -4,7 +4,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -23,6 +26,7 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 import org.nooberic.dg_toy.block.entity.DgBeaconBlockEntity;
+import org.nooberic.dg_toy.block.entity.ModBlockEntities;
 import org.nooberic.dg_toy.client.screen.BeaconScreen;
 import org.nooberic.dg_toy.item.ModItems;
 
@@ -61,10 +65,21 @@ public class DgBeaconBlock extends BaseEntityBlock {
         return PushReaction.BLOCK;
     }
 
+    @Override
+    public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction direction) {
+        return true;
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new DgBeaconBlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
+        return blockEntityType == ModBlockEntities.DG_BEACON.get() ? DgBeaconBlockEntity.getTicker(level) : null;
     }
 
     @Override
