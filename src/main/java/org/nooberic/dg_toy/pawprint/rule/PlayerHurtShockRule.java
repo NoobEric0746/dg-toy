@@ -45,6 +45,6 @@ public final class PlayerHurtShockRule extends BasePawprintRuleHandler<LivingHur
         float damageRatio = Math.min(context.event().getAmount() / MAX_SCALING_DAMAGE, 1.0F);
         int strength = Math.round(configuredStrength + (upperStrength - configuredStrength) * damageRatio);
 
-        return new PawprintEffect(strength, PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "chaos", 1);
+        return new PawprintEffect(PawprintRuleNbtHelper.getChannel(context.pawprintStack()), strength, PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "chaos", 1);
     }
 }

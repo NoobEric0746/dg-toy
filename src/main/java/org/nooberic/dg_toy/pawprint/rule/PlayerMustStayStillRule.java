@@ -41,6 +41,6 @@ public final class PlayerMustStayStillRule extends BasePawprintRuleHandler<Serve
 
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<ServerboundMovePlayerPacket> context) {
-        return new PawprintEffect(PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "const", 1);
+        return new PawprintEffect(PawprintRuleNbtHelper.getChannel(context.pawprintStack()), PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "const", 1);
     }
 }

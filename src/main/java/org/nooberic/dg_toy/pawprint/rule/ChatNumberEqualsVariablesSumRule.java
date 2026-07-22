@@ -64,7 +64,7 @@ public final class ChatNumberEqualsVariablesSumRule extends BasePawprintRuleHand
 
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<ServerChatEvent> context) {
-        return new PawprintEffect(PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "chaos", 1);
+        return new PawprintEffect(PawprintRuleNbtHelper.getChannel(context.pawprintStack()), PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "chaos", 1);
     }
 
     private static PawprintRuleVariable<String> integerVariable(String key, String displayName) {

@@ -175,7 +175,7 @@ new PawprintEffect(channel, strength, hardMode, pulseId, duration)
 
 | 字段 | 含义 |
 | --- | --- |
-| `channel` | 设备通道。 |
+| `channel` | 设备通道。普通规则使用爪印当前通道；无线规则使用红石遥控器事件携带的通道。 |
 | `strength` | 强度。 |
 | `hardMode` | `true` 调用 `control`，`false` 调用 `controlSoft`。 |
 | `pulseId` | dglib 中已注册的波形 ID。必须是实际可用的 ID，例如当前示例使用过 `chaos`、`const`。 |
@@ -196,6 +196,8 @@ new PawprintEffect(channel, strength, hardMode, pulseId, duration)
 | `player_hurt_shock` | 受伤电击 | `LivingHurtEvent` | 玩家受到正数伤害。 | channel 3、强度按伤害量从当前爪印设置线性升至设备强度上限、当前硬/软模式、`chaos`、1 秒；20 点伤害及以上使用上限。 |
 | `prohibit_attack` | 禁止攻击 | `AttackEntityEvent` | 玩家攻击生物。 | 使用当前爪印强度与硬/软模式、`chaos`、1 秒。 |
 | `prohibit_interaction` | 禁止交互 | `PlayerInteractEvent` | 玩家右键方块、实体、物品或空中。 | 使用当前爪印强度与硬/软模式、`chaos`、1 秒。 |
+| `receive_channel_a` | 接收频道 A | `RedstoneControllerActivatedEvent` | 红石遥控器的频率与规则设置的“接收频道 A”一致。 | 使用事件中的通道、强度、硬/软模式、波形与持续时间。 |
+| `receive_channel_b` | 接收频道 B | `RedstoneControllerActivatedEvent` | 红石遥控器的频率与规则设置的“接收频道 B”一致。 | 使用事件中的通道、强度、硬/软模式、波形与持续时间。 |
 
 注意：`player_crouch`、`must_crouch` 和 `prohibit_sprinting` 当前都是持续检测规则：它们在匹配条件持续成立时按各自冷却间隔重复触发；不是边沿检测规则。`prohibit_movement` 在客户端提交水平位置变化时触发，并使用相同冷却限制重复处罚。
 
@@ -206,6 +208,8 @@ Pawprint UI 会从 `PawprintRuleRegistry` 读取已注册规则：
 - 左键点击规则开关：切换 `enabled`，通过 C2S 包写回服务端主手 Pawprint NBT。
 - 右键点击规则开关：打开该规则的设置页。
 - 设置页会显示全部 `String` 变量，点击保存后逐个通过 C2S 包同步。
+
+无线模式下，右键 `接收频道 A` 或 `接收频道 B` 规则可编辑各自的接收频率，允许输入 `0` 至 `65535`。两条规则具有独立的开关与配置，可同时启用。红石遥控器由未供能转为供能时会触发事件；事件先按配置 `redstoneController.controlRange`（默认 64 格）检查玩家与遥控器方块中心的距离，超出范围直接丢弃；范围内且频率匹配的玩家会按事件携带的设置执行惩罚。
 
 相关网络包：
 

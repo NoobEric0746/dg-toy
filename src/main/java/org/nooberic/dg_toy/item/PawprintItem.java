@@ -20,6 +20,7 @@ public class PawprintItem extends Item {
         MOTION("motion", "item.dg_toy.pawprint.mode.motion"),
         SOUND("sound", "item.dg_toy.pawprint.mode.sound"),
         HURT("hurt", "item.dg_toy.pawprint.mode.hurt"),
+        WIRELESS("wireless", "item.dg_toy.pawprint.mode.wireless"),
         COLLAR("collar", "item.dg_toy.dg_collar.mode");
 
         private final String id;
@@ -42,7 +43,8 @@ public class PawprintItem extends Item {
             return switch (this) {
                 case MOTION -> SOUND;
                 case SOUND -> HURT;
-                case HURT, COLLAR -> MOTION;
+                case HURT -> WIRELESS;
+                case WIRELESS, COLLAR -> MOTION;
             };
         }
 

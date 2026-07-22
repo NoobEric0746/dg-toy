@@ -2,6 +2,7 @@ package org.nooberic.dg_toy.pawprint;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
@@ -12,6 +13,7 @@ import net.minecraftforge.fml.common.Mod;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.config.DgToyConfig;
 import org.nooberic.dg_toy.event.DgBeaconSignalEvent;
+import org.nooberic.dg_toy.event.RedstoneControllerActivatedEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 @Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -51,6 +53,25 @@ public final class PawprintEventDispatcher {
                 continue;
             }
             for (BasePawprintRuleHandler<DgBeaconSignalEvent> handler : PawprintRuleRegistry.getHandlers(DgBeaconSignalEvent.class)) {
+                handler.handle(owner, event);
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRedstoneControllerActivated(RedstoneControllerActivatedEvent event) {
+        if (ServerLifecycleHooks.getCurrentServer() == null) {
+            return;
+        }
+
+        double controlRange = DgToyConfig.REDSTONE_CONTROLLER_RANGE.get();
+        double controlRangeSqr = controlRange * controlRange;
+        Vec3 eventPosition = Vec3.atCenterOf(event.getBlockPos());
+        for (ServerPlayer owner : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
+            if (owner.position().distanceToSqr(eventPosition) > controlRangeSqr) {
+                continue;
+            }
+            for (BasePawprintRuleHandler<RedstoneControllerActivatedEvent> handler : PawprintRuleRegistry.getHandlers(RedstoneControllerActivatedEvent.class)) {
                 handler.handle(owner, event);
             }
         }

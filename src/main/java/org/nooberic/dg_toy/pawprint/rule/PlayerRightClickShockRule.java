@@ -41,6 +41,6 @@ public final class PlayerRightClickShockRule extends BasePawprintRuleHandler<Pla
 
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<PlayerInteractEvent> context) {
-        return new PawprintEffect(PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "chaos", 1);
+        return new PawprintEffect(PawprintRuleNbtHelper.getChannel(context.pawprintStack()), PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "chaos", 1);
     }
 }

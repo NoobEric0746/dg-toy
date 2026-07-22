@@ -3,6 +3,7 @@ package org.nooberic.dg_toy.block;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -19,13 +20,16 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 import org.nooberic.dg_toy.block.entity.RedstoneControllerBlockEntity;
 import org.nooberic.dg_toy.client.screen.RedstoneControllerScreen;
+import org.nooberic.dg_toy.event.RedstoneControllerActivatedEvent;
+import net.minecraftforge.common.MinecraftForge;
 
 public class RedstoneControllerBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty POWERED = BlockStateProperties.POWERED;
 
     public RedstoneControllerBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(POWERED, false));
     }
 
     @Override
@@ -40,13 +44,42 @@ public class RedstoneControllerBlock extends BaseEntityBlock {
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, POWERED);
     }
 
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new RedstoneControllerBlockEntity(pos, state);
+    }
+
+    @Override
+    public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction direction) {
+        return true;
+    }
+
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, net.minecraft.world.level.block.Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
+        if (level.isClientSide) {
+            return;
+        }
+
+        boolean powered = level.hasNeighborSignal(pos);
+        if (powered == state.getValue(POWERED)) {
+            return;
+        }
+
+        level.setBlock(pos, state.setValue(POWERED, powered), 3);
+        if (powered && level.getBlockEntity(pos) instanceof RedstoneControllerBlockEntity controller) {
+            MinecraftForge.EVENT_BUS.post(new RedstoneControllerActivatedEvent(
+                    pos,
+                    controller.getStrength(),
+                    controller.isHardMode(),
+                    controller.getPulseId(),
+                    controller.getDuration(),
+                    controller.getChannel(),
+                    controller.getFrequency()));
+        }
     }
 
     @Override

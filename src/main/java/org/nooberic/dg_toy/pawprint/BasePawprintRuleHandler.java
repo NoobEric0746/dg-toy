@@ -50,8 +50,7 @@ public abstract class BasePawprintRuleHandler<TEvent> {
                 return;
             }
 
-            int channel = PawprintRuleNbtHelper.getChannel(pawprintStack);
-            if (PawprintEffectExecutor.apply(owner, channel, effect)) {
+            if (PawprintEffectExecutor.apply(owner, effect.channel(), effect)) {
                 PawprintRuntimeState.markTriggered(owner.getUUID(), cooldownId, currentTick);
                 owner.displayClientMessage(Component.literal("爪印规则触发: " + getDisplayName()), true);
                 afterTriggered(context);

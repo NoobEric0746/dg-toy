@@ -11,6 +11,8 @@ import org.nooberic.dg_toy.pawprint.rule.PlayerMustCrouchRule;
 import org.nooberic.dg_toy.pawprint.rule.PlayerMustNotSprintRule;
 import org.nooberic.dg_toy.pawprint.rule.PlayerMustStayStillRule;
 import org.nooberic.dg_toy.pawprint.rule.PlayerRightClickShockRule;
+import org.nooberic.dg_toy.pawprint.rule.ReceiveChannelARule;
+import org.nooberic.dg_toy.pawprint.rule.ReceiveChannelBRule;
 
 public final class PawprintRules {
     private static boolean initialized;
@@ -32,6 +34,8 @@ public final class PawprintRules {
         PawprintRuleRegistry.register(PawprintMode.MOTION, new PlayerRightClickShockRule());
         PawprintRuleRegistry.register(PawprintMode.MOTION, new PlayerMustStayStillRule());
         PawprintRuleRegistry.register(PawprintMode.HURT, new PlayerHurtShockRule());
+        PawprintRuleRegistry.register(PawprintMode.WIRELESS, new ReceiveChannelARule());
+        PawprintRuleRegistry.register(PawprintMode.WIRELESS, new ReceiveChannelBRule());
         PawprintRuleRegistry.register(PawprintMode.COLLAR, new BeaconDistanceShockRule());
     }
 }

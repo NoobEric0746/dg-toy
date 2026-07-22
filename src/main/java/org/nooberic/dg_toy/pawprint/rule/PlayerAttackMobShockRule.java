@@ -37,6 +37,6 @@ public final class PlayerAttackMobShockRule extends BasePawprintRuleHandler<Atta
 
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<AttackEntityEvent> context) {
-        return new PawprintEffect(PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "chaos", 1);
+        return new PawprintEffect(PawprintRuleNbtHelper.getChannel(context.pawprintStack()), PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "chaos", 1);
     }
 }

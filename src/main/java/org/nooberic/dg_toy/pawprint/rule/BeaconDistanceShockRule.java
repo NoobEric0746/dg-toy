@@ -86,6 +86,7 @@ public final class BeaconDistanceShockRule extends BasePawprintRuleHandler<DgBea
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<DgBeaconSignalEvent> context) {
         return new PawprintEffect(
+            PawprintRuleNbtHelper.getChannel(context.pawprintStack()),
                 PawprintRuleNbtHelper.getStrength(context.pawprintStack()),
                 PawprintRuleNbtHelper.isHardMode(context.pawprintStack()),
                 "const",
