@@ -93,6 +93,7 @@ public class BeaconScreen extends Screen {
         RenderSystem.disableBlend();
 
         renderBeaconName(guiGraphics, left, top);
+    renderDistanceRangeLabel(guiGraphics, left, top);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderHoverTooltip(guiGraphics, mouseX, mouseY, left, top);
     }
@@ -106,12 +107,14 @@ public class BeaconScreen extends Screen {
         int left = leftPos();
         int top = topPos();
         if (isInside(mouseX, mouseY, sliderX(minimumDistanceLimitStep, left), top + SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.draggedSlider = DraggedSlider.LEFT;
             this.dragGrabOffsetX = mouseX - sliderX(minimumDistanceLimitStep, left);
             updateSlider(mouseX, left);
             return true;
         }
         if (isInside(mouseX, mouseY, sliderX(maximumDistanceLimitStep, left), top + SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.draggedSlider = DraggedSlider.RIGHT;
             this.dragGrabOffsetX = mouseX - sliderX(maximumDistanceLimitStep, left);
             updateSlider(mouseX, left);
@@ -180,6 +183,10 @@ public class BeaconScreen extends Screen {
         int textX = left + ITEM_NAME_CENTER_X - this.font.width(name) / 2;
         int textY = top + ITEM_NAME_CENTER_Y - this.font.lineHeight / 2;
         guiGraphics.drawString(this.font, name, textX, textY, 0xFFFFFF, false);
+    }
+
+    private void renderDistanceRangeLabel(GuiGraphics guiGraphics, int left, int top) {
+        guiGraphics.drawString(this.font, "允许的距离范围", left + 11, top + 39, 0xFFFFFF, false);
     }
 
     private void renderTrack(GuiGraphics guiGraphics, int left, int top) {

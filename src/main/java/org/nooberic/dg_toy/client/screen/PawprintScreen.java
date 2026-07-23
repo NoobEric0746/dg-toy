@@ -169,12 +169,14 @@ public class PawprintScreen extends Screen {
         int sliderY = top + TRACK_CENTER_Y - (SLIDER_HEIGHT / 2);
 
         if (button == 0 && isInside(mouseX, mouseY, sliderX, sliderY, SLIDER_WIDTH, SLIDER_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.draggingSlider = true;
             updateSlider(mouseX, left);
             return true;
         }
 
         if (!this.collarMode && button == 0 && isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, MODE_WIDTH, MODE_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.pawprintMode = this.pawprintMode.next();
             saveSettingsToHeldPawprint();
             refreshRules();
@@ -182,12 +184,14 @@ public class PawprintScreen extends Screen {
         }
 
         if (button == 0 && isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.selectedChannel = nextChannel(this.selectedChannel);
             saveSettingsToHeldPawprint();
             return true;
         }
 
         if (button == 0 && isInside(mouseX, mouseY, left + MODE_BUTTON_X, top + MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE)) {
+            DgToyScreenSounds.playButtonClick();
             this.hardMode = !this.hardMode;
             saveSettingsToHeldPawprint();
             return true;
@@ -203,6 +207,7 @@ public class PawprintScreen extends Screen {
             int toggleX = left + RULE_X + RULE_TOGGLE_OFFSET_X;
             int toggleY = ruleY + RULE_TOGGLE_OFFSET_Y;
             if (isInside(mouseX, mouseY, toggleX, toggleY, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE)) {
+                DgToyScreenSounds.playButtonClick();
                 if (button == 0) {
                     rule.enabled = !rule.enabled;
                     DgToyNetworking.sendToServer(new DgToyC2SPawprintRuleTogglePacket(rule.ruleId, rule.enabled));

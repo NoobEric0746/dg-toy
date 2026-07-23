@@ -218,26 +218,31 @@ public class RedstoneControllerScreen extends Screen {
         int left = leftPos();
         int top = topPos();
         if (isInside(mouseX, mouseY, left + this.sliderX, top + TRACK_Y, SLIDER_WIDTH, SLIDER_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.draggingSlider = true;
             updateSlider(mouseX, left);
             return true;
         }
         if (isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, BUTTON_SIZE, BUTTON_SIZE)) {
+            DgToyScreenSounds.playButtonClick();
             this.hardMode = !this.hardMode;
             saveSettings();
             return true;
         }
         if (isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.selectedChannel = this.selectedChannel == 3 ? 1 : this.selectedChannel + 1;
             saveSettings();
             return true;
         }
         if (isInside(mouseX, mouseY, left + TIME_PLUS_X, top + TIME_PLUS_Y, TIME_WIDTH, TIME_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.duration = Math.min(10, this.duration + 1);
             saveSettings();
             return true;
         }
         if (isInside(mouseX, mouseY, left + TIME_MINUS_X, top + TIME_MINUS_Y, TIME_WIDTH, TIME_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.duration = Math.max(1, this.duration - 1);
             saveSettings();
             return true;
@@ -348,7 +353,7 @@ public class RedstoneControllerScreen extends Screen {
         if (isInside(mouseX, mouseY, left + TIME_PLUS_X, top + TIME_PLUS_Y, TIME_WIDTH, TIME_HEIGHT)
                 || isInside(mouseX, mouseY, left + TIME_MINUS_X, top + TIME_MINUS_Y, TIME_WIDTH, TIME_HEIGHT)
                 || isInside(mouseX, mouseY, left + DURATION_TEXT_X, top + DURATION_TEXT_Y, DURATION_TEXT_WIDTH, DURATION_TEXT_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font, Component.literal("时长: " + this.duration), mouseX, mouseY);
+            guiGraphics.renderTooltip(this.font, Component.literal("时长: " + this.duration + "秒"), mouseX, mouseY);
         }
     }
 

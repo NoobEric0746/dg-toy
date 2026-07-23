@@ -35,7 +35,7 @@ import static net.minecraft.ChatFormatting.YELLOW;
 
 @OnlyIn(Dist.CLIENT)
 public class RemoteControlScreen extends Screen {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(Dg_toy.MODID, "textures/gui/remote_control_ui.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(Dg_toy.MODID, "textures/gui/gui_controller.png");
 
     private static final int UI_WIDTH = 115;
     private static final int UI_HEIGHT = 133;
@@ -228,6 +228,9 @@ public class RemoteControlScreen extends Screen {
     private void renderSaveButton(GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY) {
         int v = textureVForState(mouseX, mouseY, x, y, SAVE_WIDTH, SAVE_HEIGHT, SAVE_NORMAL_V, SAVE_HOVER_V, SAVE_PRESSED_V);
         guiGraphics.blit(TEXTURE, x, y, SAVE_U, v, SAVE_WIDTH, SAVE_HEIGHT);
+        boolean pressed = this.leftMouseDown && isInside(mouseX, mouseY, x, y, SAVE_WIDTH, SAVE_HEIGHT);
+        int offset = pressed ? 1 : 0;
+        guiGraphics.drawCenteredString(this.font, "保存到快捷触发", x + SAVE_WIDTH / 2 + offset, y + (SAVE_HEIGHT - 8) / 2 + offset, 0xFFFFFF);
     }
 
     private void renderSlider(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
@@ -251,23 +254,27 @@ public class RemoteControlScreen extends Screen {
         int sliderY = top + TRACK_CENTER_Y - (SLIDER_HEIGHT / 2) + SLIDER_RENDER_OFFSET_Y;
 
         if (isInside(mouseX, mouseY, sliderX, sliderY, SLIDER_WIDTH, SLIDER_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             this.draggingSlider = true;
             updateSlider(mouseX, left);
             return true;
         }
 
         if (isInside(mouseX, mouseY, left + MODE_X, top + MODE_Y, BUTTON_SIZE, BUTTON_SIZE)) {
+            DgToyScreenSounds.playButtonClick();
             this.hardMode = !this.hardMode;
             saveModeToHeldRemote();
             return true;
         }
 
         if (isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             cycleChannel();
             return true;
         }
 
         if (isInside(mouseX, mouseY, left + UNBIND_X, top + UNBIND_Y, BUTTON_SIZE, BUTTON_SIZE)) {
+            DgToyScreenSounds.playButtonClick();
             ItemStack stack = getHeldRemoteStack();
             if (!stack.isEmpty() && RemoteControlItem.isBound(stack)) {
                 DgToyNetworking.sendToServer(new DgToyC2SRemoteUnbindPacket());
@@ -279,16 +286,19 @@ public class RemoteControlScreen extends Screen {
         }
 
         if (isInside(mouseX, mouseY, left + TIME_PLUS_X, top + TIME_PLUS_Y, TIME_WIDTH, TIME_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             changeDuration(true);
             return true;
         }
 
         if (isInside(mouseX, mouseY, left + TIME_MINUS_X, top + TIME_MINUS_Y, TIME_WIDTH, TIME_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             changeDuration(false);
             return true;
         }
 
         if (isInside(mouseX, mouseY, left + SHOCK_X, top + SHOCK_Y, SHOCK_WIDTH, SHOCK_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             ItemStack stack = getHeldRemoteStack();
             if (!stack.isEmpty() && RemoteControlItem.isBound(stack)) {
                 DgToyNetworking.sendToServer(new DgToyC2SRemoteShockPacket());
@@ -297,6 +307,7 @@ public class RemoteControlScreen extends Screen {
         }
 
         if (isInside(mouseX, mouseY, left + SAVE_X, top + SAVE_Y, SAVE_WIDTH, SAVE_HEIGHT)) {
+            DgToyScreenSounds.playButtonClick();
             ItemStack stack = getHeldRemoteStack();
             if (!stack.isEmpty()) {
                 RemoteControlItem.saveCurrentShockPreset(stack);
@@ -423,6 +434,13 @@ public class RemoteControlScreen extends Screen {
             tooltip.add(Component.literal(getSelectedPulseId()));
             tooltip.add(Component.literal("使用鼠标滚轮切换"));
             guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+            return;
+        }
+
+        if (isInside(mouseX, mouseY, left + TIME_PLUS_X, top + TIME_PLUS_Y, TIME_WIDTH, TIME_HEIGHT)
+                || isInside(mouseX, mouseY, left + TIME_MINUS_X, top + TIME_MINUS_Y, TIME_WIDTH, TIME_HEIGHT)
+                || isInside(mouseX, mouseY, left + DURATION_TEXT_X, top + DURATION_TEXT_Y, this.font.width(formatDuration(this.duration)), this.font.lineHeight)) {
+            guiGraphics.renderTooltip(this.font, Component.literal("时长: " + formatDuration(this.duration)), mouseX, mouseY);
             return;
         }
 
