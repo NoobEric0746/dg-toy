@@ -89,6 +89,26 @@ public class RemoteControlItem extends Item {
         if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
             RemoteControlStateHelper.invalidateIfCleared(itemStack);
 
+            if (!player.isShiftKeyDown() && canSelfBind(player, itemStack)) {
+                if (isBound(itemStack)) {
+                    serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.remote_control.already_bound_disconnect_first"), true);
+                    return InteractionResultHolder.sidedSuccess(itemStack, false);
+                }
+
+                if (PlayerPairingData.isBound(serverPlayer)) {
+                    serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.remote_control.target_already_bound"), true);
+                    return InteractionResultHolder.sidedSuccess(itemStack, false);
+                }
+
+                if (!PlayerConnectionSyncManager.isConnected(serverPlayer.getUUID())) {
+                    serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.powerbox.not_connected"), true);
+                    return InteractionResultHolder.sidedSuccess(itemStack, false);
+                }
+
+                directSelfBind(serverPlayer, itemStack);
+                return InteractionResultHolder.sidedSuccess(itemStack, false);
+            }
+
             if (isBound(itemStack)) {
                 if (player.isShiftKeyDown()) {
                     return InteractionResultHolder.sidedSuccess(itemStack, false);
@@ -98,26 +118,11 @@ public class RemoteControlItem extends Item {
                     return InteractionResultHolder.sidedSuccess(itemStack, false);
                 }
 
-                if (!player.isShiftKeyDown() && canSelfBind(player, itemStack)) {
-                    serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.remote_control.already_bound_disconnect_first"), true);
-                    return InteractionResultHolder.sidedSuccess(itemStack, false);
-                }
-
                 return InteractionResultHolder.sidedSuccess(itemStack, false);
             }
 
-            if (!player.isShiftKeyDown() && canSelfBind(player, itemStack) && PlayerPairingData.isBound(serverPlayer)) {
-                serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.remote_control.target_already_bound"), true);
-                return InteractionResultHolder.sidedSuccess(itemStack, false);
-            }
-
-            if (!player.isShiftKeyDown() && canSelfBind(player, itemStack) && !PlayerConnectionSyncManager.isConnected(serverPlayer.getUUID())) {
-                serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.powerbox.not_connected"), true);
-                return InteractionResultHolder.sidedSuccess(itemStack, false);
-            }
-
-            if (!player.isShiftKeyDown() && canDirectSelfBind(serverPlayer, hand, itemStack)) {
-                directSelfBind(serverPlayer, itemStack);
+            if (!player.isShiftKeyDown() && hasSavedShockPreset(itemStack)) {
+                serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_unbound"), true);
                 return InteractionResultHolder.sidedSuccess(itemStack, false);
             }
         }
@@ -217,15 +222,6 @@ public class RemoteControlItem extends Item {
     private static boolean canSelfBind(Player player, ItemStack mainHandStack) {
         return mainHandStack.getItem() instanceof RemoteControlItem
                 && player.getOffhandItem().getItem() instanceof PowerboxItem;
-    }
-
-    private static boolean canDirectSelfBind(ServerPlayer player, InteractionHand hand, ItemStack mainHandStack) {
-        return hand == InteractionHand.MAIN_HAND
-                && !player.isShiftKeyDown()
-                && canSelfBind(player, mainHandStack)
-                && PlayerConnectionSyncManager.isConnected(player.getUUID())
-                && !PlayerPairingData.isBound(player)
-                && !isBound(mainHandStack);
     }
 
     private static void directSelfBind(ServerPlayer player, ItemStack stack) {
@@ -494,15 +490,19 @@ public class RemoteControlItem extends Item {
 
         UUID boundPlayerId = getBoundPlayerUuid(stack);
         if (boundPlayerId == null) {
+            sender.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_unbound"), true);
             return false;
         }
 
         ServerPlayer targetPlayer = RemoteControlStateHelper.findOnlinePlayer(boundPlayerId);
         if (targetPlayer == null) {
+            sender.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_target_offline"), true);
             return false;
         }
 
-        if (!RemoteControlStateHelper.isShockAvailable(targetPlayer)) {
+        if (!RemoteControlStateHelper.isShockAvailable(targetPlayer)
+                || !PlayerConnectionSyncManager.isConnected(targetPlayer.getUUID())) {
+            sender.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_powerbox_offline"), true);
             return false;
         }
 
@@ -515,6 +515,7 @@ public class RemoteControlItem extends Item {
         int strength = getSavedShockStrength(stack);
         int duration = getSavedShockDuration(stack);
         ShockEffectHelper.apply(targetPlayer, isSavedShockHardMode(stack), channel, strength, pulseId, duration);
+        sender.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_success"), true);
         return true;
     }
 
