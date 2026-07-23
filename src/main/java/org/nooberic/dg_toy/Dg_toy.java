@@ -2,6 +2,7 @@ package org.nooberic.dg_toy;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraftforge.common.MinecraftForge;
@@ -78,11 +79,17 @@ public class Dg_toy {
         event.enqueueWork(() -> {
             DgToyNetworking.register();
             InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
-                    new SlotTypeMessage.Builder("legs").size(1).priority(110).build());
+                    new SlotTypeMessage.Builder("powerbox")
+                        .icon(new ResourceLocation(MODID, "slot/powerbox_slot"))
+                        .size(1).priority(110).build());
                 InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
-                    new SlotTypeMessage.Builder("pawprint").size(2).priority(110).build());
+                    new SlotTypeMessage.Builder("pawprint")
+                        .icon(new ResourceLocation(MODID, "slot/pawprint_slot"))
+                        .size(2).priority(110).build());
                 InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
-                    new SlotTypeMessage.Builder("collar").size(1).priority(110).build());
+                    new SlotTypeMessage.Builder("collar")
+                        .icon(new ResourceLocation(MODID, "slot/collar_slot"))
+                        .size(1).priority(110).build());
         });
         LOGGER.info("DGToy common setup");
     }
