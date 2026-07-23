@@ -10,6 +10,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.nooberic.dglib.client.particle.DgParticleTypes;
@@ -19,6 +20,7 @@ import org.nooberic.dg_toy.server.ShockEffectHelper;
 
 public class ElectrifiedWireNettingBlock extends Block {
     private static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 1, 16);
+    private static final AABB PRESSURE_PLATE_AABB = new AABB(1.0D / 16.0D, 0.0D, 1.0D / 16.0D, 15.0D / 16.0D, 0.5D, 15.0D / 16.0D);
     private static final int PARTICLE_INTERVAL_TICKS = 8;
     private static final int PARTICLES_PER_INTERVAL = 2;
     private static final int SHOCK_INTERVAL_TICKS = 25;
@@ -50,6 +52,10 @@ public class ElectrifiedWireNettingBlock extends Block {
         }
 
         long gameTime = level.getGameTime();
+        if (!player.getBoundingBox().intersects(PRESSURE_PLATE_AABB.move(pos))) {
+            return;
+        }
+
         CompoundTag persistentData = player.getPersistentData();
         boolean enteredNetting = persistentData.getLong(LAST_CONTACT_TICK_TAG) != gameTime - 1;
 
