@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "   ",
+    "ABA",
+    "   "
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:string"
+    },
+    "B": {
+      "item": "dg_toy:pawprint"
+    }
+  },
+  "result": {
+    "item": "dg_toy:dg_collar"
+  }
+}

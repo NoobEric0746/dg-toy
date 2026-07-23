@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " A ",
+    "ABA",
+    " A "
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:iron_bars"
+    },
+    "B": {
+      "item": "dg_toy:dg_core"
+    }
+  },
+  "result": {
+    "item": "dg_toy:electrified_wire_netting"
+  }
+}

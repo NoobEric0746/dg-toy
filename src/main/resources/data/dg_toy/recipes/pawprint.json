@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " A ",
+    "ABA",
+    " A "
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:black_stained_glass"
+    },
+    "B": {
+      "item": "dg_toy:dg_core"
+    }
+  },
+  "result": {
+    "item": "dg_toy:pawprint"
+  }
+}

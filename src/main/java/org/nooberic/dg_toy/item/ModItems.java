@@ -19,6 +19,7 @@ public final class ModItems {
             new BlockItem(ModBlocks.REDSTONE_CONTROLLER.get(), new Item.Properties()));
     public static final RegistryObject<Item> ELECTRIFIED_WIRE_NETTING = ITEMS.register("electrified_wire_netting", () ->
             new BlockItem(ModBlocks.ELECTRIFIED_WIRE_NETTING.get(), new Item.Properties()));
+    public static final RegistryObject<Item> DG_CORE = ITEMS.register("dg_core", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> REMOTE_CONTROL = ITEMS.register("remote_control", RemoteControlItem::new);
 
     private ModItems() {

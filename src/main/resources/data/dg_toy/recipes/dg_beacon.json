@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " A ",
+    "DCD",
+    "BBB"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:redstone_torch"
+    },
+    "B": {
+      "item": "minecraft:black_concrete"
+    },
+    "C": {
+      "item": "dg_toy:dg_core"
+    },
+    "D": {
+      "item": "minecraft:yellow_stained_glass"
+    }
+  },
+  "result": {
+    "item": "dg_toy:dg_beacon"
+  }
+}

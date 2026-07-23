@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " A ",
+    "BCB",
+    "BDB"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:redstone_torch"
+    },
+    "B": {
+      "item": "minecraft:gold_ingot"
+    },
+    "C": {
+      "item": "dg_toy:dg_core"
+    },
+    "D": {
+      "item": "minecraft:quartz_block"
+    }
+  },
+  "result": {
+    "item": "dg_toy:remote_control"
+  }
+}

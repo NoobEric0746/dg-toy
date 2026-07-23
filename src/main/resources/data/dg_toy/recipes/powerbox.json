@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ABA",
+    "ACA",
+    "ADA"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:gold_ingot"
+    },
+    "B": {
+      "item": "minecraft:redstone_torch"
+    },
+    "C": {
+      "item": "dg_toy:dg_core"
+    },
+    "D": {
+      "item": "minecraft:redstone_block"
+    }
+  },
+  "result": {
+    "item": "dg_toy:powerbox"
+  }
+}

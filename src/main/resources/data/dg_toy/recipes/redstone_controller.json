@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "ABA",
+    "DCD",
+    "ADA"
+  ],
+  "key": {
+    "A": {
+      "item": "minecraft:gold_ingot"
+    },
+    "B": {
+      "item": "minecraft:redstone"
+    },
+    "C": {
+      "item": "dg_toy:pawprint"
+    },
+    "D": {
+      "item": "minecraft:black_concrete"
+    }
+  },
+  "result": {
+    "item": "dg_toy:redstone_controller"
+  }
+}
