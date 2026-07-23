@@ -115,7 +115,7 @@ public final class PawprintRuleNbtHelper {
                 : new CompoundTag();
 
         if (!ruleTag.contains(ENABLED_TAG)) {
-            ruleTag.putBoolean(ENABLED_TAG, true);
+            ruleTag.putBoolean(ENABLED_TAG, false);
         }
         if (!ruleTag.contains(VARS_TAG, CompoundTag.TAG_COMPOUND)) {
             ruleTag.put(VARS_TAG, new CompoundTag());

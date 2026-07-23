@@ -42,13 +42,15 @@ public final class ReceiveChannelBRule extends BasePawprintRuleHandler<RedstoneC
     @Override
     protected boolean matches(PawprintRuleContext<RedstoneControllerActivatedEvent> context) {
         String frequency = PawprintRuleNbtHelper.getStringVariable(context.pawprintStack(), RULE_ID, CHANNEL_B);
-        return Integer.parseInt(frequency) == context.event().getFrequency();
+        int sharedChannel = context.event().getChannel() & PawprintRuleNbtHelper.getChannel(context.pawprintStack());
+        return Integer.parseInt(frequency) == context.event().getFrequency() && sharedChannel != 0;
     }
 
     @Override
     protected PawprintEffect resolveEffect(PawprintRuleContext<RedstoneControllerActivatedEvent> context) {
         RedstoneControllerActivatedEvent event = context.event();
-        return new PawprintEffect(event.getChannel(), event.getStrength(), event.isHardMode(), event.getPulseId(), event.getDuration());
+        int sharedChannel = event.getChannel() & PawprintRuleNbtHelper.getChannel(context.pawprintStack());
+        return new PawprintEffect(sharedChannel, event.getStrength(), event.isHardMode(), event.getPulseId(), event.getDuration());
     }
 
     private static boolean isValidFrequency(String value) {

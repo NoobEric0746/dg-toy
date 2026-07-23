@@ -78,6 +78,7 @@ public class Dg_toy {
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
             DgToyNetworking.register();
+            PawprintRules.bootstrap();
             InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
                     new SlotTypeMessage.Builder("powerbox")
                         .icon(new ResourceLocation(MODID, "slot/powerbox_slot"))
@@ -96,7 +97,6 @@ public class Dg_toy {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        PawprintRules.bootstrap();
         LOGGER.info("DGToy server starting");
     }
 }

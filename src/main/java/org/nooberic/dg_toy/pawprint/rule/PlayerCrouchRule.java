@@ -11,7 +11,7 @@ public final class PlayerCrouchRule extends BasePawprintRuleHandler<TickEvent.Pl
 
     @Override
     public String getDisplayName() {
-        return "玩家下蹲";
+        return "禁止潜行";
     }
 
     @Override
