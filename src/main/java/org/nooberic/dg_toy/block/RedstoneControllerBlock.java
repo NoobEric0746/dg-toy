@@ -2,7 +2,6 @@ package org.nooberic.dg_toy.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -17,11 +16,13 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.api.distmarker.Dist;
 import org.jetbrains.annotations.Nullable;
 import org.nooberic.dg_toy.block.entity.RedstoneControllerBlockEntity;
-import org.nooberic.dg_toy.client.screen.RedstoneControllerScreen;
+import org.nooberic.dg_toy.client.DgToyClientScreens;
 import org.nooberic.dg_toy.event.RedstoneControllerActivatedEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.DistExecutor;
 
 public class RedstoneControllerBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -88,7 +89,7 @@ public class RedstoneControllerBlock extends BaseEntityBlock {
             return InteractionResult.PASS;
         }
         if (level.isClientSide && level.getBlockEntity(pos) instanceof RedstoneControllerBlockEntity controller) {
-            Minecraft.getInstance().setScreen(new RedstoneControllerScreen(controller));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> DgToyClientScreens.openRedstoneController(controller));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

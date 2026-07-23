@@ -13,7 +13,7 @@ public final class DgToyNetworking {
     private static boolean registered = false;
 
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            ResourceLocation.fromNamespaceAndPath(Dg_toy.MODID, "main"),
+            new ResourceLocation(Dg_toy.MODID, "main"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals

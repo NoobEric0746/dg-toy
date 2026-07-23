@@ -1,6 +1,5 @@
 package org.nooberic.dg_toy.block;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -24,10 +23,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import org.jetbrains.annotations.Nullable;
 import org.nooberic.dg_toy.block.entity.DgBeaconBlockEntity;
 import org.nooberic.dg_toy.block.entity.ModBlockEntities;
-import org.nooberic.dg_toy.client.screen.BeaconScreen;
+import org.nooberic.dg_toy.client.DgToyClientScreens;
 import org.nooberic.dg_toy.item.ModItems;
 
 import java.util.List;
@@ -106,7 +107,7 @@ public class DgBeaconBlock extends BaseEntityBlock {
             return InteractionResult.PASS;
         }
         if (level.isClientSide && level.getBlockEntity(pos) instanceof DgBeaconBlockEntity beacon) {
-            Minecraft.getInstance().setScreen(new BeaconScreen(beacon));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> DgToyClientScreens.openBeacon(beacon));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
