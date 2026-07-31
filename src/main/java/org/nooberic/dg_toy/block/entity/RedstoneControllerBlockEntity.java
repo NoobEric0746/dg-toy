@@ -11,7 +11,7 @@ import java.util.List;
 
 public class RedstoneControllerBlockEntity extends BlockEntity {
     private static final int DEFAULT_DURATION = 1;
-    private static final int DEFAULT_CHANNEL = 1;
+    private static final int DEFAULT_CHANNEL = 3;
 
     private int strength;
     private boolean hardMode = true;

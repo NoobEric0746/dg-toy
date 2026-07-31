@@ -2,6 +2,7 @@ package org.nooberic.dg_toy.pawprint;
 
 import org.nooberic.dg_toy.item.PawprintItem.PawprintMode;
 import org.nooberic.dg_toy.pawprint.rule.ChatContainsKeywordRule;
+import org.nooberic.dg_toy.pawprint.rule.ChatMustContainKeywordRule;
 import org.nooberic.dg_toy.pawprint.rule.ChatNumberEqualsVariablesSumRule;
 import org.nooberic.dg_toy.pawprint.rule.BeaconDistanceShockRule;
 import org.nooberic.dg_toy.pawprint.rule.PlayerCrouchRule;
@@ -26,7 +27,8 @@ public final class PawprintRules {
         }
         initialized = true;
         PawprintRuleRegistry.register(PawprintMode.SOUND, new ChatContainsKeywordRule());
-        PawprintRuleRegistry.register(PawprintMode.SOUND, new ChatNumberEqualsVariablesSumRule());
+        PawprintRuleRegistry.register(PawprintMode.SOUND, new ChatMustContainKeywordRule());
+        //PawprintRuleRegistry.register(PawprintMode.SOUND, new ChatNumberEqualsVariablesSumRule());
         PawprintRuleRegistry.register(PawprintMode.MOTION, new PlayerCrouchRule());
         PawprintRuleRegistry.register(PawprintMode.MOTION, new PlayerMustCrouchRule());
         PawprintRuleRegistry.register(PawprintMode.MOTION, new PlayerMustNotSprintRule());

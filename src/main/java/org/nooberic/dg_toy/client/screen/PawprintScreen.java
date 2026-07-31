@@ -179,6 +179,7 @@ public class PawprintScreen extends Screen {
             DgToyScreenSounds.playButtonClick();
             this.pawprintMode = this.pawprintMode.next();
             saveSettingsToHeldPawprint();
+            this.ruleScrollOffset = 0;
             refreshRules();
             return true;
         }

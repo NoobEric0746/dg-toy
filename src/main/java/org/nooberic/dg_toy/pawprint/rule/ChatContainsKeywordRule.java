@@ -11,11 +11,11 @@ import java.util.List;
 
 public final class ChatContainsKeywordRule extends BasePawprintRuleHandler<ServerChatEvent> {
     private static final String RULE_ID = "chat_contains_keyword";
-    private static final PawprintRuleVariable<String> KEYWORD = new PawprintRuleVariable<>("keyword", "关键词", String.class, "aaa", value -> !value.isBlank());
+    private static final PawprintRuleVariable<String> KEYWORD = new PawprintRuleVariable<>("keyword", "关键词", String.class, "", value -> !value.isBlank());
 
     @Override
     public String getDisplayName() {
-        return "聊天包含关键词";
+        return "禁止包含关键词";
     }
 
     @Override

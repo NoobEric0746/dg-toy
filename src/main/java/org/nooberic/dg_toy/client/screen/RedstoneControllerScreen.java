@@ -103,7 +103,7 @@ public class RedstoneControllerScreen extends Screen {
         super(Component.translatable("screen.dg_toy.redstone_controller"));
         this.controllerPos = controller.getBlockPos();
         this.hardMode = controller.isHardMode();
-        this.selectedChannel = controller.getChannel();
+        this.selectedChannel = toUiChannel(controller.getChannel());
         this.sliderX = strengthToSliderX(controller.getStrength());
         this.duration = controller.getDuration();
         this.frequency = controller.getFrequency();
@@ -368,7 +368,7 @@ public class RedstoneControllerScreen extends Screen {
                 this.hardMode,
                 selectedPulseId(),
                 this.duration,
-                this.selectedChannel,
+                toSavedChannel(this.selectedChannel),
                 this.frequency));
     }
 
@@ -397,6 +397,18 @@ public class RedstoneControllerScreen extends Screen {
             case 3 -> "A";
             default -> "A+B";
         };
+    }
+
+    private static int toUiChannel(int savedChannel) {
+        return switch (savedChannel) {
+            case 1 -> 3;
+            case 3 -> 1;
+            default -> 2;
+        };
+    }
+
+    private static int toSavedChannel(int uiChannel) {
+        return toUiChannel(uiChannel);
     }
 
     private static int sliderXToStrength(int sliderX) {
