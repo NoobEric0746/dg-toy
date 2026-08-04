@@ -10,7 +10,7 @@
   "item.dg_toy.dg_collar": "郊狼项圈",
   "curios.identifier.powerbox": "郊狼主机",
   "curios.identifier.pawprint": "爪印",
-  "curios.identifier.collar": "郊狼项圈",
+  "curios.identifier.dg_collar": "郊狼项圈",
   "item.dg_toy.dg_collar.mode": "项圈模式",
   "item.dg_toy.dg_collar.activate": "手持项圈右击来激活",
   "item.dg_toy.dg_collar.activated": "项圈已激活，UUID: %s",

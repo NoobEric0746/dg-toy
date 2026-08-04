@@ -88,7 +88,7 @@ public class Dg_toy {
                         .icon(new ResourceLocation(MODID, "slot/pawprint_slot"))
                         .size(2).priority(110).build());
                 InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
-                    new SlotTypeMessage.Builder("collar")
+                    new SlotTypeMessage.Builder("dg_collar")
                         .icon(new ResourceLocation(MODID, "slot/collar_slot"))
                         .size(1).priority(110).build());
         });

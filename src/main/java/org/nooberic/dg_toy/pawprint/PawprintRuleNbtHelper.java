@@ -21,7 +21,7 @@ public final class PawprintRuleNbtHelper {
     private static final String HARD_MODE_TAG = "HardMode";
     private static final String CHANNEL_TAG = "Channel";
     private static final String PAWPRINT_SLOT_ID = "pawprint";
-    private static final String COLLAR_SLOT_ID = "collar";
+    private static final String COLLAR_SLOT_ID = "dg_collar";
     private static final int DEFAULT_STRENGTH = 0;
     private static final boolean DEFAULT_HARD_MODE = true;
     public static final int DEFAULT_CHANNEL = 3;

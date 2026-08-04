@@ -29,7 +29,7 @@ public class DgBeaconItem extends BlockItem {
     private static final String COLLAR_UUID_TAG = "CollarUuid";
     private static final String MINIMUM_DISTANCE_LIMIT_TAG = "MinimumDistanceLimit";
     private static final String MAXIMUM_DISTANCE_LIMIT_TAG = "MaximumDistanceLimit";
-    private static final String COLLAR_SLOT_ID = "collar";
+    private static final String COLLAR_SLOT_ID = "dg_collar";
 
     public DgBeaconItem(Block block) {
         super(block, new Properties().stacksTo(1));
