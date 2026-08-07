@@ -21,6 +21,8 @@ public final class ModItems {
             new BlockItem(ModBlocks.ELECTRIFIED_WIRE_NETTING.get(), new Item.Properties()));
     public static final RegistryObject<Item> DG_CORE = ITEMS.register("dg_core", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> REMOTE_CONTROL = ITEMS.register("remote_control", RemoteControlItem::new);
+    public static final RegistryObject<Item> DG_PRESSURE_PLATE = ITEMS.register("dg_pressure_plate", () ->
+            new BlockItem(ModBlocks.DG_PRESSURE_PLATE.get(), new Item.Properties()));
 
     private ModItems() {
     }

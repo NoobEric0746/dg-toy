@@ -52,6 +52,7 @@ public class Dg_toy {
                 output.accept(ModItems.ELECTRIFIED_WIRE_NETTING.get());
                 output.accept(ModItems.DG_CORE.get());
                 output.accept(ModItems.REMOTE_CONTROL.get());
+                output.accept(ModItems.DG_PRESSURE_PLATE.get());
             })
             .build());
 

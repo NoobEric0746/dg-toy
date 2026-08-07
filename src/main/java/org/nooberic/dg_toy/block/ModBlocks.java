@@ -25,6 +25,12 @@ public final class ModBlocks {
                     .noOcclusion()
                     .pushReaction(PushReaction.BLOCK)));
 
+    public static final RegistryObject<Block> DG_PRESSURE_PLATE = BLOCKS.register("dg_pressure_plate", () ->
+            new DgPressurePlateBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F)
+                    .noCollission()
+                    .pushReaction(PushReaction.DESTROY)));
+
     private ModBlocks() {
     }
 }

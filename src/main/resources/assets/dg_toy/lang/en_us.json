@@ -51,5 +51,7 @@
   "item.dg_toy.powerbox.disconnected_by_remote": "A remote controller disconnected from you",
   "screen.dg_toy.remote_control": "Remote Controller",
   "screen.dg_toy.redstone_controller": "Redstone Controller",
-  "screen.dg_toy.pawprint": "Pawprint"
+  "screen.dg_toy.pawprint": "Pawprint",
+  "block.dg_toy.dg_pressure_plate": "Coyote Pressure Plate",
+  "item.dg_toy.dg_pressure_plate": "Coyote Pressure Plate"
 }
