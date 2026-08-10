@@ -1,17 +1,19 @@
 package org.nooberic.dg_toy.client.screen;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.client.PlayerConnectionStatusSnapshot;
 import org.nooberic.dg_toy.client.PlayerStatusClientCache;
@@ -35,7 +37,8 @@ import static net.minecraft.ChatFormatting.YELLOW;
 
 @OnlyIn(Dist.CLIENT)
 public class RemoteControlScreen extends Screen {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(Dg_toy.MODID, "textures/gui/gui_controller.png");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(Dg_toy.MODID, "textures/gui/gui_controller.png");
+    private static final int TEXTURE_SIZE = 256;
 
     private static final int UI_WIDTH = 115;
     private static final int UI_HEIGHT = 133;
@@ -136,13 +139,11 @@ public class RemoteControlScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
-        int left = leftPos();
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+                int left = leftPos();
         int top = topPos();
 
-        RenderSystem.enableBlend();
-        guiGraphics.blit(TEXTURE, left, top, PANEL_U, PANEL_V, UI_WIDTH, UI_HEIGHT);
+                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, left, top, (float) PANEL_U, (float) PANEL_V, UI_WIDTH, UI_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         renderStrengthBar(guiGraphics, left, top);
         renderModeButton(guiGraphics, left, top, mouseX, mouseY);
         renderChannelButton(guiGraphics, left, top, mouseX, mouseY);
@@ -152,58 +153,57 @@ public class RemoteControlScreen extends Screen {
         renderTimeButton(guiGraphics, left + TIME_MINUS_X, top + TIME_MINUS_Y, mouseX, mouseY, TIME_MINUS_V);
         renderSaveButton(guiGraphics, left + SAVE_X, top + SAVE_Y, mouseX, mouseY);
         renderSlider(guiGraphics, left, top, mouseX, mouseY);
-        RenderSystem.disableBlend();
-        renderConnectionText(guiGraphics, left, top);
+                renderConnectionText(guiGraphics, left, top);
         renderPulseText(guiGraphics, left, top);
         renderDurationText(guiGraphics, left, top);
 
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         renderHoverTooltip(guiGraphics, mouseX, mouseY, left, top);
     }
 
-    private void renderConnectionText(GuiGraphics guiGraphics, int left, int top) {
+    private void renderConnectionText(GuiGraphicsExtractor guiGraphics, int left, int top) {
         Component statusText = buildConnectionText();
-        guiGraphics.drawString(this.font, statusText, left + STATUS_TEXT_X, top + STATUS_TEXT_Y, 0xFFFFFF, false);
+        guiGraphics.text(this.font, statusText, left + STATUS_TEXT_X, top + STATUS_TEXT_Y, 0xFFFFFFFF);
     }
 
-    private void renderPulseText(GuiGraphics guiGraphics, int left, int top) {
+    private void renderPulseText(GuiGraphicsExtractor guiGraphics, int left, int top) {
         String pulseId = getSelectedPulseId();
         if (pulseId.isEmpty()) {
             return;
         }
-        guiGraphics.drawString(this.font, pulseId, left + PULSE_TEXT_X, top + PULSE_TEXT_Y, 0xFFFFFF, false);
+        guiGraphics.text(this.font, pulseId, left + PULSE_TEXT_X, top + PULSE_TEXT_Y, 0xFFFFFFFF);
     }
 
-    private void renderDurationText(GuiGraphics guiGraphics, int left, int top) {
-        guiGraphics.drawString(this.font, formatDuration(this.duration), left + DURATION_TEXT_X, top + DURATION_TEXT_Y, 0xFFFFFF, false);
+    private void renderDurationText(GuiGraphicsExtractor guiGraphics, int left, int top) {
+        guiGraphics.text(this.font, formatDuration(this.duration), left + DURATION_TEXT_X, top + DURATION_TEXT_Y, 0xFFFFFFFF);
     }
 
-    private void renderStrengthBar(GuiGraphics guiGraphics, int left, int top) {
+    private void renderStrengthBar(GuiGraphicsExtractor guiGraphics, int left, int top) {
         int litWidth = Math.max(0, Math.min(BAR_WIDTH, sliderCenterX - TRACK_MIN_CENTER_X + 1));
         int darkWidth = Math.max(0, BAR_WIDTH - litWidth);
 
         if (litWidth > 0) {
-            guiGraphics.blit(TEXTURE, left + BAR_X, top + BAR_Y, BAR_U, BAR_LIT_V, litWidth, BAR_HEIGHT);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, left + BAR_X, top + BAR_Y, (float) BAR_U, (float) BAR_LIT_V, litWidth, BAR_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         }
         if (darkWidth > 0) {
-            guiGraphics.blit(TEXTURE, left + BAR_X + litWidth, top + BAR_Y, BAR_U + litWidth, BAR_DARK_V, darkWidth, BAR_HEIGHT);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, left + BAR_X + litWidth, top + BAR_Y, (float) BAR_U + litWidth, (float) BAR_DARK_V, darkWidth, BAR_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         }
     }
 
-    private void renderModeButton(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+    private void renderModeButton(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY) {
         int x = left + MODE_X;
         int y = top + MODE_Y;
         int u = this.hardMode ? HARD_U : SOFT_U;
         int v = textureVForState(mouseX, mouseY, x, y, BUTTON_SIZE, BUTTON_SIZE, BUTTON_NORMAL_V, BUTTON_HOVER_V, BUTTON_PRESSED_V);
-        guiGraphics.blit(TEXTURE, x, y, u, v, BUTTON_SIZE, BUTTON_SIZE);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) v, BUTTON_SIZE, BUTTON_SIZE, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
-    private void renderSimpleButton(GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY, int width, int height, int u, int normalV) {
+    private void renderSimpleButton(GuiGraphicsExtractor guiGraphics, int x, int y, int mouseX, int mouseY, int width, int height, int u, int normalV) {
         int v = textureVForState(mouseX, mouseY, x, y, width, height, normalV, BUTTON_HOVER_V, BUTTON_PRESSED_V);
-        guiGraphics.blit(TEXTURE, x, y, u, v, width, height);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) v, width, height, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
-    private void renderChannelButton(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+    private void renderChannelButton(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY) {
         int x = left + CHANNEL_X;
         int y = top + CHANNEL_Y;
         int u = switch (this.selectedChannel) {
@@ -212,39 +212,42 @@ public class RemoteControlScreen extends Screen {
             default -> CHANNEL_A_U;
         };
         int v = textureVForState(mouseX, mouseY, x, y, CHANNEL_WIDTH, CHANNEL_HEIGHT, 6, 26, 26);
-        guiGraphics.blit(TEXTURE, x, y, u, v, CHANNEL_WIDTH, CHANNEL_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) v, CHANNEL_WIDTH, CHANNEL_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
-    private void renderShockButton(GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY) {
+    private void renderShockButton(GuiGraphicsExtractor guiGraphics, int x, int y, int mouseX, int mouseY) {
         int u = textureUForState(mouseX, mouseY, x, y, SHOCK_WIDTH, SHOCK_HEIGHT, SHOCK_NORMAL_U, SHOCK_HOVER_U, SHOCK_PRESSED_U);
-        guiGraphics.blit(TEXTURE, x, y, u, SHOCK_V, SHOCK_WIDTH, SHOCK_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) SHOCK_V, SHOCK_WIDTH, SHOCK_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
-    private void renderTimeButton(GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY, int v) {
+    private void renderTimeButton(GuiGraphicsExtractor guiGraphics, int x, int y, int mouseX, int mouseY, int v) {
         int u = textureUForState(mouseX, mouseY, x, y, TIME_WIDTH, TIME_HEIGHT, TIME_NORMAL_U, TIME_HOVER_U, TIME_PRESSED_U);
-        guiGraphics.blit(TEXTURE, x, y, u, v, TIME_WIDTH, TIME_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) v, TIME_WIDTH, TIME_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
-    private void renderSaveButton(GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY) {
+    private void renderSaveButton(GuiGraphicsExtractor guiGraphics, int x, int y, int mouseX, int mouseY) {
         int v = textureVForState(mouseX, mouseY, x, y, SAVE_WIDTH, SAVE_HEIGHT, SAVE_NORMAL_V, SAVE_HOVER_V, SAVE_PRESSED_V);
-        guiGraphics.blit(TEXTURE, x, y, SAVE_U, v, SAVE_WIDTH, SAVE_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) SAVE_U, (float) v, SAVE_WIDTH, SAVE_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         boolean pressed = this.leftMouseDown && isInside(mouseX, mouseY, x, y, SAVE_WIDTH, SAVE_HEIGHT);
         int offset = pressed ? 1 : 0;
-        guiGraphics.drawCenteredString(this.font, "保存到快捷触发", x + SAVE_WIDTH / 2 + offset, y + (SAVE_HEIGHT - 8) / 2 + offset, 0xFFFFFF);
+        guiGraphics.centeredText(this.font, "保存到快捷触发", x + SAVE_WIDTH / 2 + offset, y + (SAVE_HEIGHT - 8) / 2 + offset, 0xFFFFFFFF);
     }
 
-    private void renderSlider(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+    private void renderSlider(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY) {
         int x = left + this.sliderCenterX - (SLIDER_WIDTH / 2) + SLIDER_RENDER_OFFSET_X;
         int y = top + TRACK_CENTER_Y - (SLIDER_HEIGHT / 2) + SLIDER_RENDER_OFFSET_Y;
         boolean hover = isInside(mouseX, mouseY, x, y, SLIDER_WIDTH, SLIDER_HEIGHT);
         int u = this.draggingSlider ? SLIDER_PRESSED_U : hover ? SLIDER_HOVER_U : SLIDER_NORMAL_U;
-        guiGraphics.blit(TEXTURE, x, y, u, SLIDER_V, SLIDER_WIDTH, SLIDER_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) SLIDER_V, SLIDER_WIDTH, SLIDER_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button != 0) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         this.leftMouseDown = true;
@@ -320,20 +323,26 @@ public class RemoteControlScreen extends Screen {
             return true;
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0 && this.draggingSlider) {
             updateSlider(mouseX, leftPos());
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0) {
             this.leftMouseDown = false;
             if (this.draggingSlider) {
@@ -343,15 +352,16 @@ public class RemoteControlScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        double delta = scrollY;
         int left = leftPos();
         int top = topPos();
         if (!isInside(mouseX, mouseY, left + PULSE_TEXT_X, top + PULSE_TEXT_Y, PULSE_TEXT_WIDTH, PULSE_TEXT_HEIGHT)) {
-            return super.mouseScrolled(mouseX, mouseY, delta);
+            return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
         if (this.pulseIds.isEmpty() || delta == 0) {
             return true;
@@ -365,14 +375,16 @@ public class RemoteControlScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256 || this.minecraft != null && this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        if (keyCode == 256 || this.minecraft != null && this.minecraft.options.keyInventory.matches(event)) {
             if (this.minecraft != null) {
                 this.minecraft.setScreen(null);
             }
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
@@ -394,11 +406,11 @@ public class RemoteControlScreen extends Screen {
         this.sliderCenterX = clamp(localX, TRACK_MIN_CENTER_X, TRACK_MAX_CENTER_X);
     }
 
-    private void renderHoverTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY, int left, int top) {
+    private void renderHoverTooltip(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, int left, int top) {
         int sliderX = left + this.sliderCenterX - (SLIDER_WIDTH / 2) + SLIDER_RENDER_OFFSET_X;
         int sliderY = top + TRACK_CENTER_Y - (SLIDER_HEIGHT / 2) + SLIDER_RENDER_OFFSET_Y;
         if (isInside(mouseX, mouseY, sliderX, sliderY, SLIDER_WIDTH, SLIDER_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font, Component.literal(String.valueOf(sliderXToStrength(this.sliderCenterX))), mouseX, mouseY);
+            guiGraphics.setTooltipForNextFrame(this.font, Component.literal(String.valueOf(sliderXToStrength(this.sliderCenterX))), mouseX, mouseY);
             return;
         }
 
@@ -414,17 +426,17 @@ public class RemoteControlScreen extends Screen {
                 tooltip.add(Component.literal("67-100对应疼痛阈值到强度上限,适合用于惩罚"));
                 tooltip.add(Component.literal("需要对方提前设置相应数值"));
             }
-            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+            guiGraphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
             return;
         }
 
         if (isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font, Component.literal("通道: " + channelLabel(this.selectedChannel)), mouseX, mouseY);
+            guiGraphics.setTooltipForNextFrame(this.font, Component.literal("通道: " + channelLabel(this.selectedChannel)), mouseX, mouseY);
             return;
         }
 
         if (isInside(mouseX, mouseY, left + UNBIND_X, top + UNBIND_Y, BUTTON_SIZE, BUTTON_SIZE)) {
-            guiGraphics.renderTooltip(this.font, Component.literal("断开连接"), mouseX, mouseY);
+            guiGraphics.setTooltipForNextFrame(this.font, Component.literal("断开连接"), mouseX, mouseY);
             return;
         }
 
@@ -433,14 +445,14 @@ public class RemoteControlScreen extends Screen {
             tooltip.add(Component.literal("当前波形:"));
             tooltip.add(Component.literal(getSelectedPulseId()));
             tooltip.add(Component.literal("使用鼠标滚轮切换"));
-            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+            guiGraphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
             return;
         }
 
         if (isInside(mouseX, mouseY, left + TIME_PLUS_X, top + TIME_PLUS_Y, TIME_WIDTH, TIME_HEIGHT)
                 || isInside(mouseX, mouseY, left + TIME_MINUS_X, top + TIME_MINUS_Y, TIME_WIDTH, TIME_HEIGHT)
                 || isInside(mouseX, mouseY, left + DURATION_TEXT_X, top + DURATION_TEXT_Y, this.font.width(formatDuration(this.duration)), this.font.lineHeight)) {
-            guiGraphics.renderTooltip(this.font, Component.literal("时长: " + formatDuration(this.duration)), mouseX, mouseY);
+            guiGraphics.setTooltipForNextFrame(this.font, Component.literal("时长: " + formatDuration(this.duration)), mouseX, mouseY);
             return;
         }
 
@@ -456,7 +468,7 @@ public class RemoteControlScreen extends Screen {
                 tooltip.add(Component.literal("强度:" + RemoteControlItem.getSavedShockStrength(stack) + "(" + modeLabel(RemoteControlItem.isSavedShockHardMode(stack)) + "),通道:" + channelLabel(RemoteControlItem.getSavedShockChannel(stack)) + ",时长:" + formatDuration(RemoteControlItem.getSavedShockDuration(stack))));
                 tooltip.add(Component.literal("波形:" + RemoteControlItem.getSavedShockPulseId(stack)));
             }
-            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+            guiGraphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
         }
     }
 

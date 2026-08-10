@@ -1,28 +1,35 @@
 package org.nooberic.dg_toy.network;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.item.RemoteControlItem;
 import org.nooberic.dg_toy.server.RemoteControlStateHelper;
 import org.nooberic.dg_toy.server.ShockEffectHelper;
 
-import java.util.function.Supplier;
+public record DgToyC2SRemoteShockPacket() implements CustomPacketPayload {
+    public static final Type<DgToyC2SRemoteShockPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(Dg_toy.MODID, "c2s_remote_shock"));
 
-public class DgToyC2SRemoteShockPacket {
-    public static void encode(DgToyC2SRemoteShockPacket msg, FriendlyByteBuf buf) {
+    public static final StreamCodec<FriendlyByteBuf, DgToyC2SRemoteShockPacket> STREAM_CODEC = StreamCodec.of(
+            (buf, msg) -> {
+            },
+            buf -> new DgToyC2SRemoteShockPacket()
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public static DgToyC2SRemoteShockPacket decode(FriendlyByteBuf buf) {
-        return new DgToyC2SRemoteShockPacket();
-    }
-
-    public static void handle(DgToyC2SRemoteShockPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
+    public static void handle(DgToyC2SRemoteShockPacket msg, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
-            ServerPlayer sender = ctx.getSender();
-            if (sender == null) {
+            if (!(ctx.player() instanceof ServerPlayer sender)) {
                 return;
             }
 
@@ -55,7 +62,6 @@ public class DgToyC2SRemoteShockPacket {
             boolean hardMode = RemoteControlItem.isHardMode(stack);
             ShockEffectHelper.apply(targetPlayer, hardMode, channel, strength, pulseId, duration);
         });
-        ctx.setPacketHandled(true);
     }
 
     private static ItemStack getHeldRemote(ServerPlayer player) {

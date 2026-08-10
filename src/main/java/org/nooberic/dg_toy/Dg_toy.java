@@ -2,47 +2,43 @@ package org.nooberic.dg_toy;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.InterModComms;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.event.server.ServerStartingEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
-import top.theillusivec4.curios.api.SlotTypeMessage;
-import org.nooberic.dg_toy.client.DgCollarCurioRenderer;
-import org.nooberic.dg_toy.client.ModClientEvents;
-import org.nooberic.dg_toy.client.PawprintCurioRenderer;
-import org.nooberic.dg_toy.client.PowerboxCurioRenderer;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.registries.DeferredHolder;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.nooberic.dg_toy.block.ModBlocks;
 import org.nooberic.dg_toy.block.entity.ModBlockEntities;
 import org.nooberic.dg_toy.config.DgToyConfig;
+import org.nooberic.dg_toy.item.DgCollarItem;
 import org.nooberic.dg_toy.item.ModItems;
+import org.nooberic.dg_toy.item.PawprintItem;
+import org.nooberic.dg_toy.item.PowerboxItem;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.nooberic.dg_toy.pawprint.PawprintRules;
 import org.slf4j.Logger;
 
-// The value here should match an entry in the META-INF/mods.toml file
+// The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(Dg_toy.MODID)
 public class Dg_toy {
 
     public static final String MODID = "dg_toy";
     private static final Logger LOGGER = LogUtils.getLogger();
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
-    public static final RegistryObject<CreativeModeTab> DG_TOY_TAB = CREATIVE_MODE_TABS.register("dg_toy_tab", () -> CreativeModeTab.builder()
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> DG_TOY_TAB = CREATIVE_MODE_TABS.register("dg_toy_tab", () -> CreativeModeTab.builder()
             .withTabsBefore(CreativeModeTabs.TOOLS_AND_UTILITIES)
             .icon(() -> ModItems.POWERBOX.get().getDefaultInstance())
-            .title(net.minecraft.network.chat.Component.translatable("itemGroup." + MODID + ".main"))
+            .title(Component.translatable("itemGroup." + MODID + ".main"))
             .displayItems((parameters, output) -> {
                 output.accept(ModItems.PAWPRINT.get());
                 output.accept(ModItems.POWERBOX.get());
@@ -55,44 +51,32 @@ public class Dg_toy {
             })
             .build());
 
-    public Dg_toy() {
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DgToyConfig.SPEC);
+    public Dg_toy(IEventBus modEventBus, ModContainer modContainer) {
+        modContainer.registerConfig(ModConfig.Type.COMMON, DgToyConfig.SPEC);
 
         modEventBus.addListener(this::commonSetup);
-        DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            PowerboxCurioRenderer.register(modEventBus);
-            PawprintCurioRenderer.register(modEventBus);
-            DgCollarCurioRenderer.register(modEventBus);
-            ModClientEvents.register(modEventBus);
-        });
+        modEventBus.addListener(DgToyNetworking::register);
+        modEventBus.addListener(Dg_toy::registerCapabilities);
 
         ModBlocks.BLOCKS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
 
-        MinecraftForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(this);
+    }
+
+    private static void registerCapabilities(RegisterCapabilitiesEvent event) {
+        PowerboxItem.registerCurioCapability(event);
+        PawprintItem.registerCurioCapability(event);
+        DgCollarItem.registerCurioCapability(event);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            DgToyNetworking.register();
             PawprintRules.bootstrap();
-            InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
-                    new SlotTypeMessage.Builder("powerbox")
-                        .icon(new ResourceLocation(MODID, "slot/powerbox_slot"))
-                        .size(1).priority(110).build());
-                InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
-                    new SlotTypeMessage.Builder("pawprint")
-                        .icon(new ResourceLocation(MODID, "slot/pawprint_slot"))
-                        .size(2).priority(110).build());
-                InterModComms.sendTo("curios", SlotTypeMessage.REGISTER_TYPE, () ->
-                    new SlotTypeMessage.Builder("dg_collar")
-                        .icon(new ResourceLocation(MODID, "slot/collar_slot"))
-                        .size(1).priority(110).build());
+            LOGGER.info("DGToy common setup complete");
         });
-        LOGGER.info("DGToy common setup");
     }
 
     @SubscribeEvent

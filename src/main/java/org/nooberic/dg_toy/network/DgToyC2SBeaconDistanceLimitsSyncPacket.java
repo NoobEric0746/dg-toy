@@ -2,54 +2,52 @@ package org.nooberic.dg_toy.network;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
 import org.jetbrains.annotations.Nullable;
+import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.block.entity.DgBeaconBlockEntity;
 import org.nooberic.dg_toy.item.DgBeaconItem;
 import org.nooberic.dg_toy.item.ModItems;
 
-import java.util.function.Supplier;
+public record DgToyC2SBeaconDistanceLimitsSyncPacket(
+        int minimumDistanceLimit,
+        int maximumDistanceLimit,
+        @Nullable BlockPos blockPos
+) implements CustomPacketPayload {
+    public static final Type<DgToyC2SBeaconDistanceLimitsSyncPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(Dg_toy.MODID, "c2s_beacon_distance_limits_sync"));
 
-public class DgToyC2SBeaconDistanceLimitsSyncPacket {
-    private final int minimumDistanceLimit;
-    private final int maximumDistanceLimit;
-    @Nullable
-    private final BlockPos blockPos;
+    public static final StreamCodec<FriendlyByteBuf, DgToyC2SBeaconDistanceLimitsSyncPacket> STREAM_CODEC = StreamCodec.of(
+            (buf, msg) -> {
+                buf.writeInt(msg.minimumDistanceLimit);
+                buf.writeInt(msg.maximumDistanceLimit);
+                buf.writeBoolean(msg.blockPos != null);
+                if (msg.blockPos != null) {
+                    buf.writeBlockPos(msg.blockPos);
+                }
+            },
+            buf -> {
+                int minimumDistanceLimit = buf.readInt();
+                int maximumDistanceLimit = buf.readInt();
+                return buf.readBoolean()
+                        ? new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit, buf.readBlockPos())
+                        : new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit, null);
+            }
+    );
 
-    public DgToyC2SBeaconDistanceLimitsSyncPacket(int minimumDistanceLimit, int maximumDistanceLimit) {
-        this(minimumDistanceLimit, maximumDistanceLimit, null);
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public DgToyC2SBeaconDistanceLimitsSyncPacket(int minimumDistanceLimit, int maximumDistanceLimit, BlockPos blockPos) {
-        this.minimumDistanceLimit = minimumDistanceLimit;
-        this.maximumDistanceLimit = maximumDistanceLimit;
-        this.blockPos = blockPos;
-    }
-
-    public static void encode(DgToyC2SBeaconDistanceLimitsSyncPacket msg, FriendlyByteBuf buf) {
-        buf.writeInt(msg.minimumDistanceLimit);
-        buf.writeInt(msg.maximumDistanceLimit);
-        buf.writeBoolean(msg.blockPos != null);
-        if (msg.blockPos != null) {
-            buf.writeBlockPos(msg.blockPos);
-        }
-    }
-
-    public static DgToyC2SBeaconDistanceLimitsSyncPacket decode(FriendlyByteBuf buf) {
-        int minimumDistanceLimit = buf.readInt();
-        int maximumDistanceLimit = buf.readInt();
-        return buf.readBoolean()
-                ? new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit, buf.readBlockPos())
-                : new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit);
-    }
-
-    public static void handle(DgToyC2SBeaconDistanceLimitsSyncPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
+    public static void handle(DgToyC2SBeaconDistanceLimitsSyncPacket msg, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
-            ServerPlayer sender = ctx.getSender();
-            if (sender == null) {
+            if (!(ctx.player() instanceof ServerPlayer sender)) {
                 return;
             }
 
@@ -69,6 +67,5 @@ public class DgToyC2SBeaconDistanceLimitsSyncPacket {
             DgBeaconItem.setDistanceLimits(mainHand, msg.minimumDistanceLimit, msg.maximumDistanceLimit);
             sender.getInventory().setChanged();
         });
-        ctx.setPacketHandled(true);
     }
 }

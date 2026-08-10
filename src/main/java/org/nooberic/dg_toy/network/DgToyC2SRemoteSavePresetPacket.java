@@ -1,27 +1,34 @@
 package org.nooberic.dg_toy.network;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.item.RemoteControlItem;
 import org.nooberic.dg_toy.server.RemoteControlStateHelper;
 
-import java.util.function.Supplier;
+public record DgToyC2SRemoteSavePresetPacket() implements CustomPacketPayload {
+    public static final Type<DgToyC2SRemoteSavePresetPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(Dg_toy.MODID, "c2s_remote_save_preset"));
 
-public class DgToyC2SRemoteSavePresetPacket {
-    public static void encode(DgToyC2SRemoteSavePresetPacket msg, FriendlyByteBuf buf) {
+    public static final StreamCodec<FriendlyByteBuf, DgToyC2SRemoteSavePresetPacket> STREAM_CODEC = StreamCodec.of(
+            (buf, msg) -> {
+            },
+            buf -> new DgToyC2SRemoteSavePresetPacket()
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public static DgToyC2SRemoteSavePresetPacket decode(FriendlyByteBuf buf) {
-        return new DgToyC2SRemoteSavePresetPacket();
-    }
-
-    public static void handle(DgToyC2SRemoteSavePresetPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
+    public static void handle(DgToyC2SRemoteSavePresetPacket msg, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
-            ServerPlayer sender = ctx.getSender();
-            if (sender == null) {
+            if (!(ctx.player() instanceof ServerPlayer sender)) {
                 return;
             }
 
@@ -33,7 +40,6 @@ public class DgToyC2SRemoteSavePresetPacket {
             RemoteControlStateHelper.invalidateIfCleared(stack);
             RemoteControlItem.saveCurrentShockPreset(stack);
         });
-        ctx.setPacketHandled(true);
     }
 
     private static ItemStack getHeldRemote(ServerPlayer player) {

@@ -1,7 +1,7 @@
 package org.nooberic.dg_toy.event;
 
 import net.minecraft.core.BlockPos;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 public final class RedstoneControllerActivatedEvent extends Event {
     private final BlockPos blockPos;

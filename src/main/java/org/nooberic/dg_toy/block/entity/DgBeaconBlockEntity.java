@@ -1,6 +1,7 @@
 package org.nooberic.dg_toy.block.entity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.item.ItemStack;
@@ -8,8 +9,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.common.MinecraftForge;
+import net.neoforged.neoforge.common.NeoForge;
 import org.jetbrains.annotations.Nullable;
 import org.nooberic.dg_toy.event.DgBeaconSignalEvent;
 import org.nooberic.dg_toy.item.DgBeaconItem;
@@ -61,7 +64,7 @@ public class DgBeaconBlockEntity extends BlockEntity {
 
     @Nullable
     public static <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level) {
-        return level.isClientSide ? null : (tickerLevel, tickerPos, tickerState, blockEntity) -> {
+        return level.isClientSide() ? null : (tickerLevel, tickerPos, tickerState, blockEntity) -> {
             if (blockEntity instanceof DgBeaconBlockEntity beacon) {
                 beacon.broadcastSignal();
             }
@@ -82,7 +85,7 @@ public class DgBeaconBlockEntity extends BlockEntity {
             return;
         }
 
-        MinecraftForge.EVENT_BUS.post(new DgBeaconSignalEvent(
+        NeoForge.EVENT_BUS.post(new DgBeaconSignalEvent(
                 Vec3.atCenterOf(this.worldPosition),
                 this.collarUuid,
                 this.minimumDistanceLimit,
@@ -90,26 +93,27 @@ public class DgBeaconBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void saveAdditional(ValueOutput output) {
         if (this.collarUuid != null) {
-            tag.putUUID("CollarUuid", this.collarUuid);
+            output.putIntArray("CollarUuid", uuidToIntArray(this.collarUuid));
         }
-        tag.putInt("MinimumDistanceLimit", this.minimumDistanceLimit);
-        tag.putInt("MaximumDistanceLimit", this.maximumDistanceLimit);
+        output.putInt("MinimumDistanceLimit", this.minimumDistanceLimit);
+        output.putInt("MaximumDistanceLimit", this.maximumDistanceLimit);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        this.collarUuid = tag.hasUUID("CollarUuid") ? tag.getUUID("CollarUuid") : null;
-        this.minimumDistanceLimit = clampDistanceLimit(tag.getInt("MinimumDistanceLimit"));
-        this.maximumDistanceLimit = tag.contains("MaximumDistanceLimit") ? clampDistanceLimit(tag.getInt("MaximumDistanceLimit")) : 18;
+    public void loadAdditional(ValueInput input) {
+        this.collarUuid = input.getIntArray("CollarUuid")
+                .filter(parts -> parts.length == 4)
+                .map(DgBeaconBlockEntity::intArrayToUuid)
+                .orElse(null);
+        this.minimumDistanceLimit = clampDistanceLimit(input.getIntOr("MinimumDistanceLimit", 0));
+        this.maximumDistanceLimit = clampDistanceLimit(input.getIntOr("MaximumDistanceLimit", 18));
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return this.saveWithoutMetadata();
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
+        return this.saveWithoutMetadata(provider);
     }
 
     @Nullable
@@ -120,12 +124,26 @@ public class DgBeaconBlockEntity extends BlockEntity {
 
     private void sync() {
         this.setChanged();
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
         }
     }
 
     private static int clampDistanceLimit(int value) {
         return Math.max(0, Math.min(100, value));
+    }
+
+    private static int[] uuidToIntArray(UUID uuid) {
+        return new int[]{
+                (int) (uuid.getMostSignificantBits() >> 32),
+                (int) uuid.getMostSignificantBits(),
+                (int) (uuid.getLeastSignificantBits() >> 32),
+                (int) uuid.getLeastSignificantBits()};
+    }
+
+    private static UUID intArrayToUuid(int[] parts) {
+        return new UUID(
+                ((long) parts[0] << 32) | (parts[1] & 0xFFFFFFFFL),
+                ((long) parts[2] << 32) | (parts[3] & 0xFFFFFFFFL));
     }
 }

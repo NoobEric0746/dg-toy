@@ -1,7 +1,5 @@
 package org.nooberic.dg_toy.client.model;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -11,27 +9,26 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.resources.Identifier;
 import org.nooberic.dg_toy.Dg_toy;
 
-public class DgCollarCurioModel extends HumanoidModel<net.minecraft.world.entity.LivingEntity> {
+public class DgCollarCurioModel extends HumanoidModel<HumanoidRenderState> {
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(
-            new ResourceLocation(Dg_toy.MODID, "dg_collar_curio"),
+            Identifier.fromNamespaceAndPath(Dg_toy.MODID, "dg_collar_curio"),
             "main"
     );
-    private final ModelPart choker;
 
     public DgCollarCurioModel(ModelPart root) {
         super(root);
-        this.choker = root.getChild("choker");
     }
 
     public static LayerDefinition createBodyLayer() {
         MeshDefinition meshDefinition = new MeshDefinition();
         PartDefinition root = meshDefinition.getRoot();
 
-        root.addOrReplaceChild("head", CubeListBuilder.create(), PartPose.ZERO);
-        root.addOrReplaceChild("hat", CubeListBuilder.create(), PartPose.ZERO);
+        PartDefinition head = root.addOrReplaceChild("head", CubeListBuilder.create(), PartPose.ZERO);
+        head.addOrReplaceChild("hat", CubeListBuilder.create(), PartPose.ZERO);
         root.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.ZERO);
         root.addOrReplaceChild("right_arm", CubeListBuilder.create(), PartPose.ZERO);
         root.addOrReplaceChild("left_arm", CubeListBuilder.create(), PartPose.ZERO);
@@ -51,11 +48,7 @@ public class DgCollarCurioModel extends HumanoidModel<net.minecraft.world.entity
     }
 
     @Override
-    public void setupAnim(net.minecraft.world.entity.LivingEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        this.choker.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
+    public void setupAnim(HumanoidRenderState state) {
+        super.setupAnim(state);
     }
 }

@@ -1,7 +1,7 @@
 package org.nooberic.dg_toy.event;
 
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 import java.util.UUID;
 

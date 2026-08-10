@@ -2,49 +2,39 @@ package org.nooberic.dg_toy.network;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.client.PlayerStatusClientCache;
 
 import java.util.UUID;
-import java.util.function.Supplier;
 
-public class DgToyS2CRemoteTargetOnlineResultPacket {
-    private final UUID targetPlayerId;
-    private final boolean online;
-    private final boolean available;
+public record DgToyS2CRemoteTargetOnlineResultPacket(UUID targetPlayerId, boolean online, boolean available) implements CustomPacketPayload {
+    public static final Type<DgToyS2CRemoteTargetOnlineResultPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(Dg_toy.MODID, "s2c_remote_target_online_result"));
 
-    public DgToyS2CRemoteTargetOnlineResultPacket(UUID targetPlayerId, boolean online, boolean available) {
-        this.targetPlayerId = targetPlayerId;
-        this.online = online;
-        this.available = available;
+    public static final StreamCodec<FriendlyByteBuf, DgToyS2CRemoteTargetOnlineResultPacket> STREAM_CODEC = StreamCodec.of(
+            (buf, msg) -> {
+                buf.writeUUID(msg.targetPlayerId);
+                buf.writeBoolean(msg.online);
+                buf.writeBoolean(msg.available);
+            },
+            buf -> new DgToyS2CRemoteTargetOnlineResultPacket(buf.readUUID(), buf.readBoolean(), buf.readBoolean())
+    );
+
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public static void encode(DgToyS2CRemoteTargetOnlineResultPacket msg, FriendlyByteBuf buf) {
-        buf.writeUUID(msg.targetPlayerId);
-        buf.writeBoolean(msg.online);
-        buf.writeBoolean(msg.available);
-    }
-
-    public static DgToyS2CRemoteTargetOnlineResultPacket decode(FriendlyByteBuf buf) {
-        return new DgToyS2CRemoteTargetOnlineResultPacket(buf.readUUID(), buf.readBoolean(), buf.readBoolean());
-    }
-
-    public static void handle(DgToyS2CRemoteTargetOnlineResultPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
+    public static void handle(DgToyS2CRemoteTargetOnlineResultPacket msg, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
             if (Minecraft.getInstance().player == null) {
                 return;
             }
             PlayerStatusClientCache.put(msg.targetPlayerId, true, msg.available, false, 0L, System.currentTimeMillis());
         });
-        ctx.setPacketHandled(true);
-    }
-
-    public boolean isOnline() {
-        return this.online;
-    }
-
-    public boolean isAvailable() {
-        return this.available;
     }
 }

@@ -1,44 +1,44 @@
 package org.nooberic.dg_toy.network;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.item.PawprintItem;
 import org.nooberic.dg_toy.item.PawprintItem.PawprintMode;
 import org.nooberic.dg_toy.pawprint.PawprintRuleNbtHelper;
 
-import java.util.function.Supplier;
+public record DgToyC2SPawprintSettingsSyncPacket(
+        int strength,
+        boolean hardMode,
+        String pawprintModeId,
+        int channel
+) implements CustomPacketPayload {
+    public static final Type<DgToyC2SPawprintSettingsSyncPacket> TYPE =
+            new Type<>(Identifier.fromNamespaceAndPath(Dg_toy.MODID, "c2s_pawprint_settings_sync"));
 
-public class DgToyC2SPawprintSettingsSyncPacket {
-    private final int strength;
-    private final boolean hardMode;
-    private final String pawprintModeId;
-    private final int channel;
+    public static final StreamCodec<FriendlyByteBuf, DgToyC2SPawprintSettingsSyncPacket> STREAM_CODEC = StreamCodec.of(
+            (buf, msg) -> {
+                buf.writeInt(msg.strength);
+                buf.writeBoolean(msg.hardMode);
+                buf.writeUtf(msg.pawprintModeId);
+                buf.writeInt(msg.channel);
+            },
+            buf -> new DgToyC2SPawprintSettingsSyncPacket(buf.readInt(), buf.readBoolean(), buf.readUtf(), buf.readInt())
+    );
 
-    public DgToyC2SPawprintSettingsSyncPacket(int strength, boolean hardMode, String pawprintModeId, int channel) {
-        this.strength = strength;
-        this.hardMode = hardMode;
-        this.pawprintModeId = pawprintModeId;
-        this.channel = channel;
+    @Override
+    public Type<? extends CustomPacketPayload> type() {
+        return TYPE;
     }
 
-    public static void encode(DgToyC2SPawprintSettingsSyncPacket msg, FriendlyByteBuf buf) {
-        buf.writeInt(msg.strength);
-        buf.writeBoolean(msg.hardMode);
-        buf.writeUtf(msg.pawprintModeId);
-        buf.writeInt(msg.channel);
-    }
-
-    public static DgToyC2SPawprintSettingsSyncPacket decode(FriendlyByteBuf buf) {
-        return new DgToyC2SPawprintSettingsSyncPacket(buf.readInt(), buf.readBoolean(), buf.readUtf(), buf.readInt());
-    }
-
-    public static void handle(DgToyC2SPawprintSettingsSyncPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
+    public static void handle(DgToyC2SPawprintSettingsSyncPacket msg, IPayloadContext ctx) {
         ctx.enqueueWork(() -> {
-            ServerPlayer sender = ctx.getSender();
-            if (sender == null) {
+            if (!(ctx.player() instanceof ServerPlayer sender)) {
                 return;
             }
 
@@ -54,6 +54,5 @@ public class DgToyC2SPawprintSettingsSyncPacket {
                 PawprintItem.setMode(mainHand, PawprintMode.fromId(msg.pawprintModeId));
             }
         });
-        ctx.setPacketHandled(true);
     }
 }

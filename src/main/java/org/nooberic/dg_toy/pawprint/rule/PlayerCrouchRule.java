@@ -1,12 +1,12 @@
 package org.nooberic.dg_toy.pawprint.rule;
 
-import net.minecraftforge.event.TickEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import org.nooberic.dg_toy.pawprint.BasePawprintRuleHandler;
 import org.nooberic.dg_toy.pawprint.PawprintEffect;
 import org.nooberic.dg_toy.pawprint.PawprintRuleContext;
 import org.nooberic.dg_toy.pawprint.PawprintRuleNbtHelper;
 
-public final class PlayerCrouchRule extends BasePawprintRuleHandler<TickEvent.PlayerTickEvent> {
+public final class PlayerCrouchRule extends BasePawprintRuleHandler<PlayerTickEvent.Post> {
     private static final String RULE_ID = "player_crouch";
 
     @Override
@@ -25,22 +25,22 @@ public final class PlayerCrouchRule extends BasePawprintRuleHandler<TickEvent.Pl
     }
 
     @Override
-    public Class<TickEvent.PlayerTickEvent> getEventType() {
-        return TickEvent.PlayerTickEvent.class;
+    public Class<PlayerTickEvent.Post> getEventType() {
+        return PlayerTickEvent.Post.class;
     }
 
     @Override
-    protected int getCooldownTicks(PawprintRuleContext<TickEvent.PlayerTickEvent> context) {
+    protected int getCooldownTicks(PawprintRuleContext<PlayerTickEvent.Post> context) {
         return 25;
     }
 
     @Override
-    protected boolean matches(PawprintRuleContext<TickEvent.PlayerTickEvent> context) {
+    protected boolean matches(PawprintRuleContext<PlayerTickEvent.Post> context) {
         return context.owner().isShiftKeyDown();
     }
 
     @Override
-    protected PawprintEffect resolveEffect(PawprintRuleContext<TickEvent.PlayerTickEvent> context) {
+    protected PawprintEffect resolveEffect(PawprintRuleContext<PlayerTickEvent.Post> context) {
         return new PawprintEffect(PawprintRuleNbtHelper.getChannel(context.pawprintStack()), PawprintRuleNbtHelper.getStrength(context.pawprintStack()), PawprintRuleNbtHelper.isHardMode(context.pawprintStack()), "const", 1);
     }
 }

@@ -1,6 +1,8 @@
 package org.nooberic.dg_toy.server;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -9,6 +11,7 @@ import org.nooberic.dg_toy.item.RemoteControlItem;
 import top.theillusivec4.curios.api.CuriosApi;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public final class RemoteControlStateHelper {
     private RemoteControlStateHelper() {
@@ -33,21 +36,13 @@ public final class RemoteControlStateHelper {
     }
 
     public static void clearRemoteControlsForTarget(UUID targetPlayerId) {
-        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
         if (server == null) {
             return;
         }
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            for (ItemStack stack : player.getInventory().items) {
-                clearIfTargetsPlayer(stack, targetPlayerId);
-            }
-            for (ItemStack stack : player.getInventory().armor) {
-                clearIfTargetsPlayer(stack, targetPlayerId);
-            }
-            for (ItemStack stack : player.getInventory().offhand) {
-                clearIfTargetsPlayer(stack, targetPlayerId);
-            }
+            forEachHeldStack(player, stack -> clearIfTargetsPlayer(stack, targetPlayerId));
         }
     }
 
@@ -67,7 +62,7 @@ public final class RemoteControlStateHelper {
 
     @Nullable
     public static ServerPlayer findOnlinePlayer(UUID playerId) {
-        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
         return server == null ? null : server.getPlayerList().getPlayer(playerId);
     }
 
@@ -82,23 +77,30 @@ public final class RemoteControlStateHelper {
     }
 
     private static void notifyRemoteDisconnected(ItemStack stack, UUID boundPlayerId, @Nullable String boundPlayerName) {
-        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
         if (server == null) {
             return;
         }
 
         for (ServerPlayer player : server.getPlayerList().getPlayers()) {
-            notifyIfHoldingStack(player, stack, boundPlayerId, boundPlayerName, player.getInventory().items);
-            notifyIfHoldingStack(player, stack, boundPlayerId, boundPlayerName, player.getInventory().armor);
-            notifyIfHoldingStack(player, stack, boundPlayerId, boundPlayerName, player.getInventory().offhand);
+            forEachHeldStack(player, held -> {
+                if (held == stack) {
+                    PlayerMessageCompat.displayClientMessage(player, RemoteControlItem.createRemoteDisconnectedMessage(boundPlayerId, boundPlayerName), true);
+                }
+            });
         }
     }
 
-    private static void notifyIfHoldingStack(ServerPlayer holder, ItemStack targetStack, UUID boundPlayerId, @Nullable String boundPlayerName, Iterable<ItemStack> stacks) {
-        for (ItemStack stack : stacks) {
-            if (stack == targetStack) {
-                holder.displayClientMessage(RemoteControlItem.createRemoteDisconnectedMessage(boundPlayerId, boundPlayerName), true);
-                return;
+    /** 遍历玩家主背包 + 装备槽（含副手）中的所有物品。 */
+    private static void forEachHeldStack(ServerPlayer player, Consumer<ItemStack> action) {
+        Inventory inventory = player.getInventory();
+        for (int i = 0; i < inventory.getContainerSize(); i++) {
+            action.accept(inventory.getItem(i));
+        }
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            ItemStack stack = player.getItemBySlot(slot);
+            if (!stack.isEmpty()) {
+                action.accept(stack);
             }
         }
     }

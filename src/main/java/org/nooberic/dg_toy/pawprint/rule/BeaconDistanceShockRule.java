@@ -10,7 +10,6 @@ import org.nooberic.dg_toy.pawprint.BasePawprintRuleHandler;
 import org.nooberic.dg_toy.pawprint.PawprintEffect;
 import org.nooberic.dg_toy.pawprint.PawprintRuleContext;
 import org.nooberic.dg_toy.pawprint.PawprintRuleNbtHelper;
-import org.joml.Vector3f;
 
 import java.util.UUID;
 
@@ -18,8 +17,8 @@ public final class BeaconDistanceShockRule extends BasePawprintRuleHandler<DgBea
     private static final String RULE_ID = "beacon_distance_shock";
     private static final double BOUNDARY_WARNING_DISTANCE = 1.0D;
     private static final double PARTICLE_SPACING = 0.25D;
-    private static final DustParticleOptions WARNING_PARTICLE = new DustParticleOptions(new Vector3f(1.0F, 1.0F, 0.0F), 1.0F);
-    private static final DustParticleOptions PENALTY_PARTICLE = new DustParticleOptions(new Vector3f(1.0F, 0.0F, 0.0F), 1.0F);
+    private static final DustParticleOptions WARNING_PARTICLE = new DustParticleOptions(0xFFFFFF00, 1.0F);
+    private static final DustParticleOptions PENALTY_PARTICLE = new DustParticleOptions(0xFFFF0000, 1.0F);
 
     @Override
     public String getDisplayName() {
@@ -71,12 +70,12 @@ public final class BeaconDistanceShockRule extends BasePawprintRuleHandler<DgBea
         double distance = offset.length();
         int particleCount = Math.max(1, (int) Math.ceil(distance / PARTICLE_SPACING));
         Vec3 step = offset.scale(1.0D / particleCount);
-        ServerLevel level = context.owner().serverLevel();
+        ServerLevel level = context.owner().level();
 
         for (int index = 0; index <= particleCount; index++) {
             Vec3 particlePosition = start.add(step.scale(index));
-            for (ServerPlayer player : context.owner().server.getPlayerList().getPlayers()) {
-                level.sendParticles(player, particle, true,
+            for (ServerPlayer player : context.owner().level().getServer().getPlayerList().getPlayers()) {
+                level.sendParticles(player, particle, true, false,
                         particlePosition.x, particlePosition.y, particlePosition.z,
                         1, 0.0D, 0.0D, 0.0D, 0.0D);
             }

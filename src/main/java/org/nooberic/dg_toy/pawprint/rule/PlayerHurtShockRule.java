@@ -1,13 +1,13 @@
 package org.nooberic.dg_toy.pawprint.rule;
 
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dg_toy.pawprint.BasePawprintRuleHandler;
 import org.nooberic.dg_toy.pawprint.PawprintEffect;
 import org.nooberic.dg_toy.pawprint.PawprintRuleContext;
 import org.nooberic.dg_toy.pawprint.PawprintRuleNbtHelper;
 
-public final class PlayerHurtShockRule extends BasePawprintRuleHandler<LivingHurtEvent> {
+public final class PlayerHurtShockRule extends BasePawprintRuleHandler<LivingIncomingDamageEvent> {
     private static final String RULE_ID = "player_hurt_shock";
     private static final float MAX_SCALING_DAMAGE = 20.0F;
 
@@ -27,17 +27,17 @@ public final class PlayerHurtShockRule extends BasePawprintRuleHandler<LivingHur
     }
 
     @Override
-    public Class<LivingHurtEvent> getEventType() {
-        return LivingHurtEvent.class;
+    public Class<LivingIncomingDamageEvent> getEventType() {
+        return LivingIncomingDamageEvent.class;
     }
 
     @Override
-    protected boolean matches(PawprintRuleContext<LivingHurtEvent> context) {
+    protected boolean matches(PawprintRuleContext<LivingIncomingDamageEvent> context) {
         return context.event().getAmount() > 0.0F;
     }
 
     @Override
-    protected PawprintEffect resolveEffect(PawprintRuleContext<LivingHurtEvent> context) {
+    protected PawprintEffect resolveEffect(PawprintRuleContext<LivingIncomingDamageEvent> context) {
         int configuredStrength = PawprintRuleNbtHelper.getStrength(context.pawprintStack());
         int channel = PawprintRuleNbtHelper.getChannel(context.pawprintStack());
         int strengthLimit = Math.max(0, Math.min(200, DgLibApi.get().getStrengthLimit(channel)));

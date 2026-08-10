@@ -1,7 +1,8 @@
 {
   "order": 110,
-  "icon": "curios:slot/empty_curio_slot",
+  "icon": "dg_toy:slot/pawprint_slot",
   "validators": ["curios:tag"],
   "size": 2,
-  "drop_rule": "DEFAULT"
+  "drop_rule": "default",
+  "entities": ["minecraft:player"]
 }

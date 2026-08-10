@@ -5,6 +5,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import org.nooberic.dg_toy.item.ModItems;
 import org.nooberic.dg_toy.item.PawprintItem;
+import org.nooberic.dg_toy.util.ItemStackNbt;
 import top.theillusivec4.curios.api.CuriosApi;
 import top.theillusivec4.curios.api.SlotContext;
 import top.theillusivec4.curios.api.SlotResult;
@@ -12,6 +13,7 @@ import top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 public final class PawprintRuleNbtHelper {
     private static final String RULES_TAG = "PawprintRules";
@@ -31,10 +33,10 @@ public final class PawprintRuleNbtHelper {
 
     public static List<SlotResult> getEquippedPawprints(ServerPlayer player) {
         List<SlotResult> ruleDevices = new ArrayList<>();
-        CuriosApi.getCuriosInventory(player).resolve()
+        CuriosApi.getCuriosInventory(player)
                 .flatMap(handler -> handler.getStacksHandler(PAWPRINT_SLOT_ID))
                 .ifPresent(handler -> ruleDevices.addAll(getRuleDevicesFromSlots(player, handler, PAWPRINT_SLOT_ID)));
-        CuriosApi.getCuriosInventory(player).resolve()
+        CuriosApi.getCuriosInventory(player)
                 .flatMap(handler -> handler.getStacksHandler(COLLAR_SLOT_ID))
                 .ifPresent(handler -> ruleDevices.addAll(getRuleDevicesFromSlots(player, handler, COLLAR_SLOT_ID)));
         return List.copyOf(ruleDevices);
@@ -69,85 +71,101 @@ public final class PawprintRuleNbtHelper {
     }
 
     public static int getStrength(ItemStack stack) {
-        CompoundTag tag = stack.getOrCreateTag();
-        if (!tag.contains(STRENGTH_TAG)) {
-            tag.putInt(STRENGTH_TAG, DEFAULT_STRENGTH);
-        }
-        int strength = clampStrength(tag.getInt(STRENGTH_TAG));
-        tag.putInt(STRENGTH_TAG, strength);
-        return strength;
+        return clampStrength(ItemStackNbt.getInt(stack, STRENGTH_TAG, DEFAULT_STRENGTH));
     }
 
     public static void setStrength(ItemStack stack, int strength) {
-        stack.getOrCreateTag().putInt(STRENGTH_TAG, clampStrength(strength));
+        ItemStackNbt.putInt(stack, STRENGTH_TAG, clampStrength(strength));
     }
 
     public static boolean isHardMode(ItemStack stack) {
-        CompoundTag tag = stack.getOrCreateTag();
-        if (!tag.contains(HARD_MODE_TAG)) {
-            tag.putBoolean(HARD_MODE_TAG, DEFAULT_HARD_MODE);
-        }
-        return tag.getBoolean(HARD_MODE_TAG);
+        return ItemStackNbt.getBoolean(stack, HARD_MODE_TAG, DEFAULT_HARD_MODE);
     }
 
     public static void setHardMode(ItemStack stack, boolean hardMode) {
-        stack.getOrCreateTag().putBoolean(HARD_MODE_TAG, hardMode);
+        ItemStackNbt.putBoolean(stack, HARD_MODE_TAG, hardMode);
     }
 
     public static int getChannel(ItemStack stack) {
-        CompoundTag tag = stack.getOrCreateTag();
-        int channel = tag.contains(CHANNEL_TAG) ? clampChannel(tag.getInt(CHANNEL_TAG)) : DEFAULT_CHANNEL;
-        tag.putInt(CHANNEL_TAG, channel);
-        return channel;
+        return clampChannel(ItemStackNbt.getInt(stack, CHANNEL_TAG, DEFAULT_CHANNEL));
     }
 
     public static void setChannel(ItemStack stack, int channel) {
-        stack.getOrCreateTag().putInt(CHANNEL_TAG, clampChannel(channel));
+        ItemStackNbt.putInt(stack, CHANNEL_TAG, clampChannel(channel));
     }
 
+    /** 对指定规则的 NBT 子节点做读改写。 */
+    private static void updateRuleTag(ItemStack stack, String ruleId, Consumer<CompoundTag> action) {
+        ItemStackNbt.update(stack, root -> {
+            CompoundTag rulesTag = root.contains(RULES_TAG) ? root.getCompoundOrEmpty(RULES_TAG) : new CompoundTag();
+            CompoundTag ruleTag = rulesTag.contains(ruleId) ? rulesTag.getCompoundOrEmpty(ruleId) : new CompoundTag();
+            if (!ruleTag.contains(ENABLED_TAG)) {
+                ruleTag.putBoolean(ENABLED_TAG, false);
+            }
+            if (!ruleTag.contains(VARS_TAG)) {
+                ruleTag.put(VARS_TAG, new CompoundTag());
+            }
+            action.accept(ruleTag);
+            rulesTag.put(ruleId, ruleTag);
+            root.put(RULES_TAG, rulesTag);
+        });
+    }
+
+    /** 兼容旧调用：返回规则的 NBT 副本（只读语义，修改不会写回）。 */
     public static CompoundTag getOrCreateRuleTag(ItemStack stack, String ruleId) {
-        CompoundTag rootTag = stack.getOrCreateTag();
-        CompoundTag rulesTag = rootTag.contains(RULES_TAG, CompoundTag.TAG_COMPOUND)
-                ? rootTag.getCompound(RULES_TAG)
-                : new CompoundTag();
-        CompoundTag ruleTag = rulesTag.contains(ruleId, CompoundTag.TAG_COMPOUND)
-                ? rulesTag.getCompound(ruleId)
-                : new CompoundTag();
-
-        if (!ruleTag.contains(ENABLED_TAG)) {
-            ruleTag.putBoolean(ENABLED_TAG, false);
+        CompoundTag root = ItemStackNbt.getTag(stack);
+        if (!root.contains(RULES_TAG)) {
+            return new CompoundTag();
         }
-        if (!ruleTag.contains(VARS_TAG, CompoundTag.TAG_COMPOUND)) {
-            ruleTag.put(VARS_TAG, new CompoundTag());
+        CompoundTag rulesTag = root.getCompoundOrEmpty(RULES_TAG);
+        if (!rulesTag.contains(ruleId)) {
+            return new CompoundTag();
         }
-
-        rulesTag.put(ruleId, ruleTag);
-        rootTag.put(RULES_TAG, rulesTag);
-        return ruleTag;
+        return rulesTag.getCompoundOrEmpty(ruleId).copy();
     }
 
     public static boolean isRuleEnabled(ItemStack stack, String ruleId) {
-        return getOrCreateRuleTag(stack, ruleId).getBoolean(ENABLED_TAG);
+        CompoundTag root = ItemStackNbt.getTag(stack);
+        if (!root.contains(RULES_TAG)) {
+            return false;
+        }
+        CompoundTag rulesTag = root.getCompoundOrEmpty(RULES_TAG);
+        if (!rulesTag.contains(ruleId)) {
+            return false;
+        }
+        return rulesTag.getCompoundOrEmpty(ruleId).getBooleanOr(ENABLED_TAG, false);
     }
 
+    public static void setRuleEnabled(ItemStack stack, String ruleId, boolean enabled) {
+        updateRuleTag(stack, ruleId, ruleTag -> ruleTag.putBoolean(ENABLED_TAG, enabled));
+    }
+
+    /** 兼容旧调用：返回变量子节点的 NBT 副本（只读语义）。 */
     public static CompoundTag getOrCreateVariablesTag(ItemStack stack, String ruleId) {
         CompoundTag ruleTag = getOrCreateRuleTag(stack, ruleId);
-        CompoundTag varsTag = ruleTag.getCompound(VARS_TAG);
-        ruleTag.put(VARS_TAG, varsTag);
-        return varsTag;
+        return ruleTag.contains(VARS_TAG) ? ruleTag.getCompoundOrEmpty(VARS_TAG).copy() : new CompoundTag();
     }
 
     public static String getStringVariable(ItemStack stack, String ruleId, PawprintRuleVariable<String> variable) {
         CompoundTag varsTag = getOrCreateVariablesTag(stack, ruleId);
-        String value = varsTag.contains(variable.key()) ? varsTag.getString(variable.key()) : variable.defaultValue();
+        String value = varsTag.contains(variable.key())
+                ? varsTag.getStringOr(variable.key(), variable.defaultValue())
+                : variable.defaultValue();
         if (!variable.isValid(value)) {
             value = variable.defaultValue();
-            varsTag.putString(variable.key(), value);
-        }
-        if (!varsTag.contains(variable.key())) {
-            varsTag.putString(variable.key(), value);
+            setStringVariable(stack, ruleId, variable.key(), value);
+        } else if (!varsTag.contains(variable.key())) {
+            setStringVariable(stack, ruleId, variable.key(), value);
         }
         return value;
+    }
+
+    public static void setStringVariable(ItemStack stack, String ruleId, String key, String value) {
+        updateRuleTag(stack, ruleId, ruleTag -> {
+            CompoundTag varsTag = ruleTag.contains(VARS_TAG) ? ruleTag.getCompoundOrEmpty(VARS_TAG) : new CompoundTag();
+            varsTag.putString(key, value);
+            ruleTag.put(VARS_TAG, varsTag);
+        });
     }
 
     private static int clampStrength(int strength) {

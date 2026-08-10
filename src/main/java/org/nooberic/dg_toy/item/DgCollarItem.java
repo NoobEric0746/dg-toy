@@ -2,74 +2,108 @@ package org.nooberic.dg_toy.item;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 import org.nooberic.dg_toy.client.screen.PawprintScreen;
+import org.nooberic.dg_toy.server.PlayerMessageCompat;
+import org.nooberic.dg_toy.util.ItemStackNbt;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import top.theillusivec4.curios.api.CuriosCapability;
+import top.theillusivec4.curios.api.SlotContext;
+import top.theillusivec4.curios.api.type.capability.ICurio;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class DgCollarItem extends Item {
     private static final String COLLAR_UUID_TAG = "CollarUuid";
 
-    public DgCollarItem() {
-        super(new Properties().stacksTo(1));
+    public DgCollarItem(Item.Properties properties) {
+        super(properties.stacksTo(1));
+    }
+
+    public static void registerCurioCapability(RegisterCapabilitiesEvent event) {
+        event.registerItem(CuriosCapability.ITEM, (stack, context) -> new DgCollarCurio(stack), ModItems.DG_COLLAR.get());
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack itemStack = player.getItemInHand(hand);
         if (hand != InteractionHand.MAIN_HAND) {
-            return InteractionResultHolder.pass(itemStack);
+            return InteractionResult.PASS;
         }
 
         if (!hasCollarUuid(itemStack)) {
-            if (!level.isClientSide) {
+            if (!level.isClientSide()) {
                 UUID collarUuid = UUID.randomUUID();
-                itemStack.getOrCreateTag().putUUID(COLLAR_UUID_TAG, collarUuid);
-                player.displayClientMessage(Component.translatable("item.dg_toy.dg_collar.activated", collarUuid), true);
+                ItemStackNbt.putUUID(itemStack, COLLAR_UUID_TAG, collarUuid);
+                PlayerMessageCompat.displayClientMessage((ServerPlayer) player, Component.translatableEscape("item.dg_toy.dg_collar.activated", collarUuid), true);
             }
-            return InteractionResultHolder.sidedSuccess(itemStack, level.isClientSide);
+            return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
         }
 
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             openScreen();
         }
-        return InteractionResultHolder.sidedSuccess(itemStack, level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag flag) {
         UUID collarUuid = getCollarUuid(stack);
         if (collarUuid == null) {
-            tooltip.add(Component.translatable("item.dg_toy.dg_collar.activate"));
+            tooltip.accept(Component.translatable("item.dg_toy.dg_collar.activate"));
         } else {
-            tooltip.add(Component.translatable("item.dg_toy.dg_collar.uuid", collarUuid));
+            tooltip.accept(Component.translatableEscape("item.dg_toy.dg_collar.uuid", collarUuid));
         }
     }
 
     public static boolean hasCollarUuid(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        return tag != null && tag.hasUUID(COLLAR_UUID_TAG);
+        return ItemStackNbt.getUUID(stack, COLLAR_UUID_TAG) != null;
     }
 
     @Nullable
     public static UUID getCollarUuid(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        return tag != null && tag.hasUUID(COLLAR_UUID_TAG) ? tag.getUUID(COLLAR_UUID_TAG) : null;
+        return ItemStackNbt.getUUID(stack, COLLAR_UUID_TAG);
     }
 
     @OnlyIn(Dist.CLIENT)
     private void openScreen() {
         Minecraft.getInstance().setScreen(new PawprintScreen(true));
+    }
+
+    private static final class DgCollarCurio implements ICurio {
+        private final ItemStack stack;
+
+        private DgCollarCurio(ItemStack stack) {
+            this.stack = stack;
+        }
+
+        @Override
+        public ItemStack getStack() {
+            return this.stack;
+        }
+
+        @Override
+        public boolean canEquip(SlotContext slotContext) {
+            return true;
+        }
+
+
+        @Override
+        public boolean canSync(SlotContext slotContext) {
+            return true;
+        }
     }
 }

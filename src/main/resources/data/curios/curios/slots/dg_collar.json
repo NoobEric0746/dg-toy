@@ -1,0 +1,8 @@
+{
+  "order": 120,
+  "icon": "dg_toy:slot/collar_slot",
+  "validators": ["curios:tag"],
+  "size": 1,
+  "drop_rule": "default",
+  "entities": ["minecraft:player"]
+}

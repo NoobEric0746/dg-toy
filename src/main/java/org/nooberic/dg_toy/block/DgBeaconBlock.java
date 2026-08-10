@@ -1,5 +1,6 @@
 package org.nooberic.dg_toy.block;
 
+import com.mojang.serialization.MapCodec;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -23,8 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
+import net.neoforged.api.distmarker.Dist;
 import org.jetbrains.annotations.Nullable;
 import org.nooberic.dg_toy.block.entity.DgBeaconBlockEntity;
 import org.nooberic.dg_toy.block.entity.ModBlockEntities;
@@ -34,6 +34,7 @@ import org.nooberic.dg_toy.item.ModItems;
 import java.util.List;
 
 public class DgBeaconBlock extends BaseEntityBlock {
+    public static final MapCodec<DgBeaconBlock> CODEC = simpleCodec(DgBeaconBlock::new);
     private static final VoxelShape SHAPE = Shapes.or(
             Block.box(0, 0, 0, 16, 3, 16),
             Block.box(3, 3, 3, 13, 7, 13),
@@ -41,6 +42,11 @@ public class DgBeaconBlock extends BaseEntityBlock {
             Block.box(5, 7, 6, 6, 13, 10),
             Block.box(10, 7, 6, 11, 13, 10),
             Block.box(7, 13, 7, 9, 16, 9));
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec() {
+        return CODEC;
+    }
 
     public DgBeaconBlock(Properties properties) {
         super(properties);
@@ -102,13 +108,22 @@ public class DgBeaconBlock extends BaseEntityBlock {
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }
-        if (level.isClientSide && level.getBlockEntity(pos) instanceof DgBeaconBlockEntity beacon) {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> DgToyClientScreens.openBeacon(beacon));
+        return openBeaconScreen(state, level, pos);
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openBeaconScreen(state, level, pos);
+    }
+
+    private InteractionResult openBeaconScreen(BlockState state, Level level, BlockPos pos) {
+        if (level.isClientSide() && level.getBlockEntity(pos) instanceof DgBeaconBlockEntity beacon) {
+            DgToyClientScreens.openBeacon(beacon);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 }

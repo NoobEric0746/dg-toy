@@ -1,24 +1,53 @@
 package org.nooberic.dg_toy.server;
 
-import net.minecraft.nbt.CompoundTag;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.minecraft.world.level.saveddata.SavedDataType;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public final class PairingClearSavedData extends SavedData {
-    private static final String DATA_NAME = "dg_toy_pairing_clear";
-    private static final String ENTRIES_TAG = "Entries";
-    private static final String CLEAR_TIME_TAG = "ClearTime";
-    private static final String CLEAR_FLAG_TAG = "ClearFlag";
+    private static final String DATA_NAME = "pairing_clear";
+
+    private static final Codec<Entry> ENTRY_CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.LONG.fieldOf("ClearTime").forGetter(Entry::clearTime),
+            Codec.BOOL.fieldOf("ClearFlag").forGetter(Entry::clearFlag)
+    ).apply(instance, Entry::new));
+
+    private static final Codec<PairingClearSavedData> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+            Codec.unboundedMap(Codec.STRING, ENTRY_CODEC)
+                    .optionalFieldOf("Entries", Map.of())
+                    .forGetter(data -> {
+                        Map<String, Entry> stringMap = new HashMap<>();
+                        data.entries.forEach((uuid, entry) -> stringMap.put(uuid.toString(), entry));
+                        return stringMap;
+                    })
+    ).apply(instance, entries -> {
+        PairingClearSavedData data = new PairingClearSavedData();
+        entries.forEach((key, entry) -> {
+            try {
+                data.entries.put(UUID.fromString(key), entry);
+            } catch (IllegalArgumentException ignored) {
+            }
+        });
+        return data;
+    }));
+
+    public static final SavedDataType<PairingClearSavedData> TYPE = new SavedDataType<>(
+            Identifier.fromNamespaceAndPath("dg_toy", DATA_NAME),
+            PairingClearSavedData::new,
+            CODEC);
 
     private final Map<UUID, Entry> entries = new HashMap<>();
 
     public static PairingClearSavedData get(MinecraftServer server) {
-        return server.overworld().getDataStorage().computeIfAbsent(PairingClearSavedData::load, PairingClearSavedData::new, DATA_NAME);
+        return server.overworld().getDataStorage().computeIfAbsent(TYPE);
     }
 
     public static PairingClearSavedData get() {
@@ -27,20 +56,6 @@ public final class PairingClearSavedData extends SavedData {
             throw new IllegalStateException("Server not available");
         }
         return get(server);
-    }
-
-    public static PairingClearSavedData load(CompoundTag tag) {
-        PairingClearSavedData data = new PairingClearSavedData();
-        CompoundTag entriesTag = tag.getCompound(ENTRIES_TAG);
-        for (String key : entriesTag.getAllKeys()) {
-            try {
-                UUID uuid = UUID.fromString(key);
-                CompoundTag entryTag = entriesTag.getCompound(key);
-                data.entries.put(uuid, new Entry(entryTag.getLong(CLEAR_TIME_TAG), entryTag.getBoolean(CLEAR_FLAG_TAG)));
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        return data;
     }
 
     public long getClearTime(UUID playerId) {
@@ -69,19 +84,6 @@ public final class PairingClearSavedData extends SavedData {
             entries.put(playerId, new Entry(clearTime, clearFlag));
         }
         setDirty();
-    }
-
-    @Override
-    public CompoundTag save(CompoundTag tag) {
-        CompoundTag entriesTag = new CompoundTag();
-        for (Map.Entry<UUID, Entry> mapEntry : entries.entrySet()) {
-            CompoundTag entryTag = new CompoundTag();
-            entryTag.putLong(CLEAR_TIME_TAG, mapEntry.getValue().clearTime());
-            entryTag.putBoolean(CLEAR_FLAG_TAG, mapEntry.getValue().clearFlag());
-            entriesTag.put(mapEntry.getKey().toString(), entryTag);
-        }
-        tag.put(ENTRIES_TAG, entriesTag);
-        return tag;
     }
 
     private record Entry(long clearTime, boolean clearFlag) {

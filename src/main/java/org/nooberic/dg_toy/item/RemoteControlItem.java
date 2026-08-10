@@ -8,12 +8,12 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
@@ -21,24 +21,27 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import net.minecraft.world.entity.projectile.ProjectileUtil;
 import org.jetbrains.annotations.Nullable;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dg_toy.client.screen.RemoteControlScreen;
 import org.nooberic.dg_toy.server.PairingClearSavedData;
 import org.nooberic.dg_toy.server.PlayerConnectionSyncManager;
+import org.nooberic.dg_toy.server.PlayerMessageCompat;
 import org.nooberic.dg_toy.server.PlayerPairingData;
 import org.nooberic.dg_toy.server.PlayerStatusBroadcaster;
 import org.nooberic.dg_toy.server.RemoteControlStateHelper;
 import org.nooberic.dg_toy.server.ShockEffectHelper;
 import org.nooberic.dg_toy.server.VirtualPairingManager;
+import org.nooberic.dg_toy.util.ItemStackNbt;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import static net.minecraft.ChatFormatting.YELLOW;
 
@@ -58,76 +61,69 @@ public class RemoteControlItem extends Item {
     private static final int DEFAULT_DURATION = 1;
     private static final int DEFAULT_CHANNEL = 1;
 
-    public RemoteControlItem() {
-        super(new Properties().stacksTo(1));
+    public RemoteControlItem(Item.Properties properties) {
+        super(properties.stacksTo(1));
     }
 
     @Override
-    public ItemStack getDefaultInstance() {
-        ItemStack stack = super.getDefaultInstance();
-        ensureTag(stack);
-        return stack;
-    }
-
-    @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack itemStack = player.getItemInHand(hand);
 
         if (hand != InteractionHand.MAIN_HAND) {
-            return InteractionResultHolder.pass(itemStack);
+            return InteractionResult.PASS;
         }
 
         if (isTargetingOtherPlayer(level, player)) {
-            return InteractionResultHolder.pass(itemStack);
+            return InteractionResult.PASS;
         }
 
-        if (level.isClientSide && player.isShiftKeyDown()) {
+        if (level.isClientSide() && player.isShiftKeyDown()) {
             openScreen();
-            return InteractionResultHolder.sidedSuccess(itemStack, true);
+            return InteractionResult.SUCCESS;
         }
 
-        if (!level.isClientSide && player instanceof ServerPlayer serverPlayer) {
+        if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
             RemoteControlStateHelper.invalidateIfCleared(itemStack);
 
             if (!player.isShiftKeyDown() && canSelfBind(player, itemStack)) {
                 if (isBound(itemStack)) {
-                    serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.remote_control.already_bound_disconnect_first"), true);
-                    return InteractionResultHolder.sidedSuccess(itemStack, false);
+                    PlayerMessageCompat.displayClientMessage(serverPlayer, Component.translatable("item.dg_toy.remote_control.already_bound_disconnect_first"), true);
+                    return InteractionResult.CONSUME;
                 }
 
                 if (PlayerPairingData.isBound(serverPlayer)) {
-                    serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.remote_control.target_already_bound"), true);
-                    return InteractionResultHolder.sidedSuccess(itemStack, false);
+                    PlayerMessageCompat.displayClientMessage(serverPlayer, Component.translatable("item.dg_toy.remote_control.target_already_bound"), true);
+                    return InteractionResult.CONSUME;
                 }
 
                 if (!PlayerConnectionSyncManager.isConnected(serverPlayer.getUUID())) {
-                    serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.powerbox.not_connected"), true);
-                    return InteractionResultHolder.sidedSuccess(itemStack, false);
+                    PlayerMessageCompat.displayClientMessage(serverPlayer, Component.translatable("item.dg_toy.powerbox.not_connected"), true);
+                    return InteractionResult.CONSUME;
                 }
 
                 directSelfBind(serverPlayer, itemStack);
-                return InteractionResultHolder.sidedSuccess(itemStack, false);
+                return InteractionResult.CONSUME;
             }
 
             if (isBound(itemStack)) {
                 if (player.isShiftKeyDown()) {
-                    return InteractionResultHolder.sidedSuccess(itemStack, false);
+                    return InteractionResult.CONSUME;
                 }
 
                 if (triggerSavedShock(serverPlayer, itemStack)) {
-                    return InteractionResultHolder.sidedSuccess(itemStack, false);
+                    return InteractionResult.CONSUME;
                 }
 
-                return InteractionResultHolder.sidedSuccess(itemStack, false);
+                return InteractionResult.CONSUME;
             }
 
             if (!player.isShiftKeyDown() && hasSavedShockPreset(itemStack)) {
-                serverPlayer.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_unbound"), true);
-                return InteractionResultHolder.sidedSuccess(itemStack, false);
+                PlayerMessageCompat.displayClientMessage(serverPlayer, Component.translatable("item.dg_toy.remote_control.shock_unbound"), true);
+                return InteractionResult.CONSUME;
             }
         }
 
-        return InteractionResultHolder.sidedSuccess(itemStack, level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -159,7 +155,7 @@ public class RemoteControlItem extends Item {
     private static boolean isTargetingOtherPlayer(Level level, Player player) {
         Vec3 eyePosition = player.getEyePosition();
         Vec3 viewVector = player.getViewVector(1.0F);
-        double reachDistance = player.getBlockReach();
+        double reachDistance = player.blockInteractionRange();
         Vec3 reachPosition = eyePosition.add(viewVector.scale(reachDistance));
 
         HitResult blockHitResult = level.clip(new ClipContext(eyePosition, reachPosition, ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, player));
@@ -180,41 +176,41 @@ public class RemoteControlItem extends Item {
         boolean selfBind = actor.getUUID().equals(targetPlayer.getUUID());
 
         if (isBound(stack)) {
-            actor.displayClientMessage(Component.translatable("item.dg_toy.remote_control.already_bound_disconnect_first"), true);
+            PlayerMessageCompat.displayClientMessage(actor, Component.translatable("item.dg_toy.remote_control.already_bound_disconnect_first"), true);
             return InteractionResult.CONSUME;
         }
 
         if (PlayerPairingData.isBound(targetPlayer)) {
             if (!selfBind) {
-                actor.displayClientMessage(Component.translatable("item.dg_toy.remote_control.target_already_bound"), true);
+                PlayerMessageCompat.displayClientMessage(actor, Component.translatable("item.dg_toy.remote_control.target_already_bound"), true);
             }
             return InteractionResult.CONSUME;
         }
 
         if (!VirtualPairingManager.isPairingActive(targetPlayer.getUUID())) {
             if (!selfBind) {
-                actor.displayClientMessage(Component.translatable("item.dg_toy.remote_control.target_not_pairing"), true);
+                PlayerMessageCompat.displayClientMessage(actor, Component.translatable("item.dg_toy.remote_control.target_not_pairing"), true);
             }
             return InteractionResult.PASS;
         }
 
         UUID remoteId = getOrCreateRemoteId(stack);
         if (!VirtualPairingManager.bind(targetPlayer, remoteId)) {
-            actor.displayClientMessage(Component.translatable("item.dg_toy.remote_control.bind_failed"), true);
+            PlayerMessageCompat.displayClientMessage(actor, Component.translatable("item.dg_toy.remote_control.bind_failed"), true);
             return InteractionResult.CONSUME;
         }
 
-        bindToPlayer(stack, targetPlayer.getUUID(), targetPlayer.getGameProfile().getName(), VirtualPairingManager.getCurrentLogicalTime(targetPlayer));
+        bindToPlayer(stack, targetPlayer.getUUID(), targetPlayer.getGameProfile().name(), VirtualPairingManager.getCurrentLogicalTime(targetPlayer));
         PairingClearSavedData.get().setClearFlag(targetPlayer.getUUID(), false);
         PlayerStatusBroadcaster.broadcastNow(targetPlayer);
         if (!selfBind) {
             PlayerStatusBroadcaster.broadcastNow(actor);
         }
-        actor.displayClientMessage(Component.translatable("item.dg_toy.remote_control.connect_success", coloredPlayerName(targetPlayer)), true);
+        PlayerMessageCompat.displayClientMessage(actor, Component.translatable("item.dg_toy.remote_control.connect_success", coloredPlayerName(targetPlayer)), true);
         if (selfBind) {
-            targetPlayer.displayClientMessage(Component.translatable("item.dg_toy.powerbox.connect_success_self"), true);
+            PlayerMessageCompat.displayClientMessage(targetPlayer, Component.translatable("item.dg_toy.powerbox.connect_success_self"), true);
         } else {
-            targetPlayer.displayClientMessage(Component.translatable("item.dg_toy.powerbox.connected_by_remote", coloredPlayerName(actor)), true);
+            PlayerMessageCompat.displayClientMessage(targetPlayer, Component.translatable("item.dg_toy.powerbox.connected_by_remote", coloredPlayerName(actor)), true);
         }
         return InteractionResult.CONSUME;
     }
@@ -228,27 +224,27 @@ public class RemoteControlItem extends Item {
         UUID remoteId = getOrCreateRemoteId(stack);
         PlayerPairingData.setBoundRemoteId(player, remoteId);
         VirtualPairingManager.clearPairingWindow(player.getUUID());
-        bindToPlayer(stack, player.getUUID(), player.getGameProfile().getName(), VirtualPairingManager.getCurrentLogicalTime(player));
+        bindToPlayer(stack, player.getUUID(), player.getGameProfile().name(), VirtualPairingManager.getCurrentLogicalTime(player));
         PairingClearSavedData.get().setClearFlag(player.getUUID(), false);
         PlayerStatusBroadcaster.broadcastNow(player);
-        player.displayClientMessage(Component.translatable("item.dg_toy.remote_control.connect_success", coloredPlayerName(player)), true);
-        player.displayClientMessage(Component.translatable("item.dg_toy.powerbox.connect_success_self"), true);
+        PlayerMessageCompat.displayClientMessage(player, Component.translatable("item.dg_toy.remote_control.connect_success", coloredPlayerName(player)), true);
+        PlayerMessageCompat.displayClientMessage(player, Component.translatable("item.dg_toy.powerbox.connect_success_self"), true);
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.dg_toy.remote_control.desc"));
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay tooltipDisplay, Consumer<Component> tooltip, TooltipFlag flag) {
+        tooltip.accept(Component.translatable("item.dg_toy.remote_control.desc"));
         String boundPlayerName = getBoundPlayerName(stack);
         if (boundPlayerName != null) {
-            tooltip.add(Component.translatable("item.dg_toy.remote_control.bound_player", Component.literal(boundPlayerName)));
+            tooltip.accept(Component.translatable("item.dg_toy.remote_control.bound_player", Component.literal(boundPlayerName)));
         }
     }
 
     @Nullable
     public static String getBoundPlayerName(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        if (tag != null && tag.contains(BOUND_PLAYER_NAME_TAG)) {
-            String playerName = tag.getString(BOUND_PLAYER_NAME_TAG);
+        CompoundTag tag = ItemStackNbt.getTag(stack);
+        if (tag.contains(BOUND_PLAYER_NAME_TAG)) {
+            String playerName = tag.getStringOr(BOUND_PLAYER_NAME_TAG, "");
             if (!playerName.isBlank()) {
                 return playerName;
             }
@@ -263,11 +259,7 @@ public class RemoteControlItem extends Item {
 
     @Nullable
     public static UUID getBoundPlayerUuid(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        if (tag == null || !tag.hasUUID(BOUND_PLAYER_UUID_TAG)) {
-            return null;
-        }
-        return tag.getUUID(BOUND_PLAYER_UUID_TAG);
+        return ItemStackNbt.getUUID(stack, BOUND_PLAYER_UUID_TAG);
     }
 
     public static void bindToPlayer(ItemStack stack, UUID playerUuid, String playerName) {
@@ -275,137 +267,117 @@ public class RemoteControlItem extends Item {
     }
 
     public static void bindToPlayer(ItemStack stack, UUID playerUuid, String playerName, long boundTime) {
-        CompoundTag tag = ensureTag(stack);
-        tag.putUUID(BOUND_PLAYER_UUID_TAG, playerUuid);
-        tag.putString(BOUND_PLAYER_NAME_TAG, playerName);
-        tag.putLong(BOUND_TIME_TAG, boundTime);
+        ItemStackNbt.update(stack, tag -> {
+            ItemStackNbt.putUUID(tag, BOUND_PLAYER_UUID_TAG, playerUuid);
+            tag.putString(BOUND_PLAYER_NAME_TAG, playerName);
+            tag.putLong(BOUND_TIME_TAG, boundTime);
+        });
     }
 
     public static void unbind(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        if (tag == null) {
-            return;
-        }
-        tag.remove(BOUND_PLAYER_UUID_TAG);
-        tag.remove(BOUND_PLAYER_NAME_TAG);
-        tag.remove(REMOTE_ID_TAG);
-        tag.remove(BOUND_TIME_TAG);
-        if (tag.isEmpty()) {
-            stack.setTag(null);
-        }
+        ItemStackNbt.update(stack, tag -> {
+            tag.remove(BOUND_PLAYER_UUID_TAG);
+            tag.remove(BOUND_PLAYER_NAME_TAG);
+            tag.remove(REMOTE_ID_TAG);
+            tag.remove(BOUND_TIME_TAG);
+        });
     }
 
     public static long getBoundTime(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        if (tag == null || !tag.contains(BOUND_TIME_TAG)) {
-            return 0L;
-        }
-        return tag.getLong(BOUND_TIME_TAG);
+        return ItemStackNbt.getLong(stack, BOUND_TIME_TAG, 0L);
     }
 
     public static int getStrength(ItemStack stack) {
-        CompoundTag tag = ensureTag(stack);
-        return clampStrength(tag.getInt(STRENGTH_TAG));
+        return clampStrength(ItemStackNbt.getInt(stack, STRENGTH_TAG, DEFAULT_STRENGTH));
     }
 
     public static void setStrength(ItemStack stack, int strength) {
-        CompoundTag tag = ensureTag(stack);
-        tag.putInt(STRENGTH_TAG, clampStrength(strength));
+        ItemStackNbt.putInt(stack, STRENGTH_TAG, clampStrength(strength));
     }
 
     public static boolean isHardMode(ItemStack stack) {
-        CompoundTag tag = ensureTag(stack);
-        return tag.getBoolean(HARD_MODE_TAG);
+        return ItemStackNbt.getBoolean(stack, HARD_MODE_TAG, DEFAULT_HARD_MODE);
     }
 
     public static void setHardMode(ItemStack stack, boolean hardMode) {
-        CompoundTag tag = ensureTag(stack);
-        tag.putBoolean(HARD_MODE_TAG, hardMode);
+        ItemStackNbt.putBoolean(stack, HARD_MODE_TAG, hardMode);
     }
 
     public static String getPulseId(ItemStack stack) {
-        CompoundTag tag = ensureTag(stack);
-        String pulseId = tag.getString(PULSE_ID_TAG);
+        String pulseId = ItemStackNbt.getString(stack, PULSE_ID_TAG, "");
         List<String> pulseIds = getAvailablePulseIds();
         if (pulseIds.isEmpty()) {
-            if (tag.contains(PULSE_ID_TAG)) {
-                tag.remove(PULSE_ID_TAG);
+            if (ItemStackNbt.contains(stack, PULSE_ID_TAG)) {
+                ItemStackNbt.remove(stack, PULSE_ID_TAG);
             }
             return "";
         }
 
         if (!pulseIds.contains(pulseId)) {
             pulseId = pulseIds.get(0);
-            tag.putString(PULSE_ID_TAG, pulseId);
+            ItemStackNbt.putString(stack, PULSE_ID_TAG, pulseId);
         }
         return pulseId;
     }
 
     public static void setPulseId(ItemStack stack, String pulseId) {
-        CompoundTag tag = ensureTag(stack);
         List<String> pulseIds = getAvailablePulseIds();
         if (pulseIds.isEmpty()) {
-            tag.remove(PULSE_ID_TAG);
+            ItemStackNbt.remove(stack, PULSE_ID_TAG);
             return;
         }
 
         String nextPulseId = pulseIds.contains(pulseId) ? pulseId : pulseIds.get(0);
-        tag.putString(PULSE_ID_TAG, nextPulseId);
+        ItemStackNbt.putString(stack, PULSE_ID_TAG, nextPulseId);
     }
 
     public static int getDuration(ItemStack stack) {
-        CompoundTag tag = ensureTag(stack);
-        return clampDuration(tag.getInt(DURATION_TAG));
+        return clampDuration(ItemStackNbt.getInt(stack, DURATION_TAG, DEFAULT_DURATION));
     }
 
     public static void setDuration(ItemStack stack, int duration) {
-        CompoundTag tag = ensureTag(stack);
-        tag.putInt(DURATION_TAG, clampDuration(duration));
+        ItemStackNbt.putInt(stack, DURATION_TAG, clampDuration(duration));
     }
 
     public static int getChannel(ItemStack stack) {
-        CompoundTag tag = ensureTag(stack);
-        return clampChannel(tag.getInt(CHANNEL_TAG));
+        return clampChannel(ItemStackNbt.getInt(stack, CHANNEL_TAG, DEFAULT_CHANNEL));
     }
 
     public static void setChannel(ItemStack stack, int channel) {
-        CompoundTag tag = ensureTag(stack);
-        tag.putInt(CHANNEL_TAG, clampChannel(channel));
+        ItemStackNbt.putInt(stack, CHANNEL_TAG, clampChannel(channel));
     }
 
     public static void saveCurrentShockPreset(ItemStack stack) {
-        CompoundTag tag = ensureTag(stack);
         CompoundTag savedTag = new CompoundTag();
         savedTag.putInt(STRENGTH_TAG, getStrength(stack));
         savedTag.putBoolean(HARD_MODE_TAG, isHardMode(stack));
         savedTag.putString(PULSE_ID_TAG, getPulseId(stack));
         savedTag.putInt(DURATION_TAG, getDuration(stack));
         savedTag.putInt(CHANNEL_TAG, getChannel(stack));
-        tag.put(SAVED_SHOCK_TAG, savedTag);
+        ItemStackNbt.update(stack, tag -> tag.put(SAVED_SHOCK_TAG, savedTag));
     }
 
     public static boolean hasSavedShockPreset(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        return tag != null && tag.contains(SAVED_SHOCK_TAG, CompoundTag.TAG_COMPOUND);
+        return ItemStackNbt.getTag(stack).contains(SAVED_SHOCK_TAG);
     }
 
     @Nullable
     public static CompoundTag getSavedShockPreset(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        if (tag == null || !tag.contains(SAVED_SHOCK_TAG, CompoundTag.TAG_COMPOUND)) {
+        CompoundTag tag = ItemStackNbt.getTag(stack);
+        if (!tag.contains(SAVED_SHOCK_TAG)) {
             return null;
         }
-        return tag.getCompound(SAVED_SHOCK_TAG).copy();
+        return tag.getCompoundOrEmpty(SAVED_SHOCK_TAG).copy();
     }
 
     public static int getSavedShockStrength(ItemStack stack) {
         CompoundTag preset = getSavedShockPreset(stack);
-        return preset == null ? DEFAULT_STRENGTH : clampStrength(preset.getInt(STRENGTH_TAG));
+        return preset == null ? DEFAULT_STRENGTH : clampStrength(preset.getIntOr(STRENGTH_TAG, DEFAULT_STRENGTH));
     }
 
     public static boolean isSavedShockHardMode(ItemStack stack) {
         CompoundTag preset = getSavedShockPreset(stack);
-        return preset == null ? DEFAULT_HARD_MODE : preset.getBoolean(HARD_MODE_TAG);
+        return preset == null ? DEFAULT_HARD_MODE : preset.getBooleanOr(HARD_MODE_TAG, DEFAULT_HARD_MODE);
     }
 
     public static String getSavedShockPulseId(ItemStack stack) {
@@ -413,7 +385,7 @@ public class RemoteControlItem extends Item {
         if (preset == null) {
             return "";
         }
-        String pulseId = preset.getString(PULSE_ID_TAG);
+        String pulseId = preset.getStringOr(PULSE_ID_TAG, "");
         List<String> pulseIds = getAvailablePulseIds();
         if (pulseIds.isEmpty()) {
             return "";
@@ -423,12 +395,12 @@ public class RemoteControlItem extends Item {
 
     public static int getSavedShockDuration(ItemStack stack) {
         CompoundTag preset = getSavedShockPreset(stack);
-        return preset == null ? DEFAULT_DURATION : clampDuration(preset.getInt(DURATION_TAG));
+        return preset == null ? DEFAULT_DURATION : clampDuration(preset.getIntOr(DURATION_TAG, DEFAULT_DURATION));
     }
 
     public static int getSavedShockChannel(ItemStack stack) {
         CompoundTag preset = getSavedShockPreset(stack);
-        return preset == null ? DEFAULT_CHANNEL : clampChannel(preset.getInt(CHANNEL_TAG));
+        return preset == null ? DEFAULT_CHANNEL : clampChannel(preset.getIntOr(CHANNEL_TAG, DEFAULT_CHANNEL));
     }
 
     public static List<String> getAvailablePulseIds() {
@@ -437,11 +409,13 @@ public class RemoteControlItem extends Item {
     }
 
     public static UUID getOrCreateRemoteId(ItemStack stack) {
-        CompoundTag tag = ensureTag(stack);
-        if (!tag.hasUUID(REMOTE_ID_TAG)) {
-            tag.putUUID(REMOTE_ID_TAG, UUID.randomUUID());
+        UUID existing = ItemStackNbt.getUUID(stack, REMOTE_ID_TAG);
+        if (existing != null) {
+            return existing;
         }
-        return tag.getUUID(REMOTE_ID_TAG);
+        UUID newId = UUID.randomUUID();
+        ItemStackNbt.putUUID(stack, REMOTE_ID_TAG, newId);
+        return newId;
     }
 
     private static MutableComponent coloredPlayerName(ServerPlayer player) {
@@ -464,20 +438,20 @@ public class RemoteControlItem extends Item {
         ServerPlayer targetPlayer = RemoteControlStateHelper.findOnlinePlayer(boundPlayerId);
         if (targetPlayer != null) {
             RemoteControlStateHelper.clearPlayerPairing(targetPlayer);
-            targetPlayer.displayClientMessage(Component.translatable("item.dg_toy.powerbox.disconnected_by_remote", coloredPlayerName(actor)), true);
+            PlayerMessageCompat.displayClientMessage(targetPlayer, Component.translatable("item.dg_toy.powerbox.disconnected_by_remote", coloredPlayerName(actor)), true);
             PlayerStatusBroadcaster.broadcastNow(targetPlayer);
         } else {
             PairingClearSavedData.get().setClearFlag(boundPlayerId, true);
         }
 
         unbind(stack);
-        actor.displayClientMessage(Component.translatable("item.dg_toy.remote_control.disconnect_success", coloredPlayerNameFromNbt(boundPlayerName)), true);
+        PlayerMessageCompat.displayClientMessage(actor, Component.translatable("item.dg_toy.remote_control.disconnect_success", coloredPlayerNameFromNbt(boundPlayerName)), true);
     }
 
     private static MutableComponent coloredPlayerNameFromNbt(@Nullable String playerName) {
         String name = playerName;
         if (name == null || name.isBlank()) {
-            name = " 玩家 ";
+            name = "玩家";
             return Component.literal(name).setStyle(Style.EMPTY.withColor(YELLOW));
         }
         return Component.literal(" " + name + " ").setStyle(Style.EMPTY.withColor(YELLOW));
@@ -490,19 +464,19 @@ public class RemoteControlItem extends Item {
 
         UUID boundPlayerId = getBoundPlayerUuid(stack);
         if (boundPlayerId == null) {
-            sender.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_unbound"), true);
+            PlayerMessageCompat.displayClientMessage(sender, Component.translatable("item.dg_toy.remote_control.shock_unbound"), true);
             return false;
         }
 
         ServerPlayer targetPlayer = RemoteControlStateHelper.findOnlinePlayer(boundPlayerId);
         if (targetPlayer == null) {
-            sender.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_target_offline"), true);
+            PlayerMessageCompat.displayClientMessage(sender, Component.translatable("item.dg_toy.remote_control.shock_target_offline"), true);
             return false;
         }
 
         if (!RemoteControlStateHelper.isShockAvailable(targetPlayer)
                 || !PlayerConnectionSyncManager.isConnected(targetPlayer.getUUID())) {
-            sender.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_powerbox_offline"), true);
+            PlayerMessageCompat.displayClientMessage(sender, Component.translatable("item.dg_toy.remote_control.shock_powerbox_offline"), true);
             return false;
         }
 
@@ -515,63 +489,8 @@ public class RemoteControlItem extends Item {
         int strength = getSavedShockStrength(stack);
         int duration = getSavedShockDuration(stack);
         ShockEffectHelper.apply(targetPlayer, isSavedShockHardMode(stack), channel, strength, pulseId, duration);
-        sender.displayClientMessage(Component.translatable("item.dg_toy.remote_control.shock_success"), true);
+        PlayerMessageCompat.displayClientMessage(sender, Component.translatable("item.dg_toy.remote_control.shock_success"), true);
         return true;
-    }
-
-    private static CompoundTag ensureTag(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
-        if (tag == null) {
-            tag = new CompoundTag();
-            writeDefaultSettings(tag);
-            stack.setTag(tag);
-            return tag;
-        }
-
-        boolean updated = false;
-        if (!tag.contains(STRENGTH_TAG)) {
-            tag.putInt(STRENGTH_TAG, DEFAULT_STRENGTH);
-            updated = true;
-        }
-        if (!tag.contains(HARD_MODE_TAG)) {
-            tag.putBoolean(HARD_MODE_TAG, DEFAULT_HARD_MODE);
-            updated = true;
-        }
-        if (!tag.contains(PULSE_ID_TAG)) {
-            String defaultPulseId = getDefaultPulseId();
-            if (!defaultPulseId.isEmpty()) {
-                tag.putString(PULSE_ID_TAG, defaultPulseId);
-                updated = true;
-            }
-        }
-        if (!tag.contains(DURATION_TAG)) {
-            tag.putInt(DURATION_TAG, DEFAULT_DURATION);
-            updated = true;
-        }
-        if (!tag.contains(CHANNEL_TAG)) {
-            tag.putInt(CHANNEL_TAG, DEFAULT_CHANNEL);
-            updated = true;
-        }
-        if (updated) {
-            stack.setTag(tag);
-        }
-        return tag;
-    }
-
-    private static void writeDefaultSettings(CompoundTag tag) {
-        tag.putInt(STRENGTH_TAG, DEFAULT_STRENGTH);
-        tag.putBoolean(HARD_MODE_TAG, DEFAULT_HARD_MODE);
-        String defaultPulseId = getDefaultPulseId();
-        if (!defaultPulseId.isEmpty()) {
-            tag.putString(PULSE_ID_TAG, defaultPulseId);
-        }
-        tag.putInt(DURATION_TAG, DEFAULT_DURATION);
-        tag.putInt(CHANNEL_TAG, DEFAULT_CHANNEL);
-    }
-
-    private static String getDefaultPulseId() {
-        List<String> pulseIds = getAvailablePulseIds();
-        return pulseIds.isEmpty() ? "" : pulseIds.get(0);
     }
 
     private static int clampStrength(int strength) {
