@@ -1,15 +1,17 @@
 package org.nooberic.dg_toy.client.screen;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.item.PawprintItem;
 import org.nooberic.dg_toy.network.DgToyC2SPawprintSettingsSyncPacket;
@@ -25,7 +27,8 @@ import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class PawprintScreen extends Screen {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(Dg_toy.MODID, "textures/gui/gui_pawprint.png");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(Dg_toy.MODID, "textures/gui/gui_pawprint.png");
+    private static final int TEXTURE_SIZE = 256;
 
     private static final int UI_WIDTH = 114;
     private static final int UI_HEIGHT = 132;
@@ -132,13 +135,11 @@ public class PawprintScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
-        int left = leftPos();
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+                int left = leftPos();
         int top = topPos();
 
-        RenderSystem.enableBlend();
-        guiGraphics.blit(TEXTURE, left, top, 0, 0, UI_WIDTH, UI_HEIGHT);
+                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, left, top, (float) 0, (float) 0, UI_WIDTH, UI_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         renderPawprintIcon(guiGraphics, left, top);
         renderModeButton(guiGraphics, left, top, mouseX, mouseY);
         renderChannelButton(guiGraphics, left, top, mouseX, mouseY);
@@ -146,18 +147,20 @@ public class PawprintScreen extends Screen {
         renderStrengthModeButtons(guiGraphics, left, top, mouseX, mouseY);
         renderSlider(guiGraphics, left, top, mouseX, mouseY);
         renderRuleBlocks(guiGraphics, left, top, mouseX, mouseY);
-        RenderSystem.disableBlend();
-
+        
         renderModeText(guiGraphics, left, top);
         renderPawprintName(guiGraphics, left, top);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         renderHoverTooltip(guiGraphics, mouseX, mouseY, left, top);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button != 0 && button != 1) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         if (button == 0) {
@@ -219,20 +222,21 @@ public class PawprintScreen extends Screen {
             }
         }
 
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        double delta = scrollY;
         int left = leftPos();
         int top = topPos();
         if (!isInside(mouseX, mouseY, left + RULE_X, top + RULES_VIEWPORT_TOP, RULE_WIDTH, RULES_VIEWPORT_BOTTOM - RULES_VIEWPORT_TOP)) {
-            return super.mouseScrolled(mouseX, mouseY, delta);
+            return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
         int maxScroll = maxRuleScroll();
         if (maxScroll <= 0) {
-            return super.mouseScrolled(mouseX, mouseY, delta);
+            return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
         int nextOffset = this.ruleScrollOffset - (int) Math.signum(delta) * RULE_SCROLL_STEP;
@@ -241,16 +245,22 @@ public class PawprintScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0 && this.draggingSlider) {
             updateSlider(mouseX, leftPos());
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0) {
             this.leftMouseDown = false;
             if (this.draggingSlider) {
@@ -260,18 +270,20 @@ public class PawprintScreen extends Screen {
                 return true;
             }
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256 || this.minecraft != null && this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        if (keyCode == 256 || this.minecraft != null && this.minecraft.options.keyInventory.matches(event)) {
             if (this.minecraft != null) {
                 this.minecraft.setScreen(null);
             }
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
@@ -279,14 +291,14 @@ public class PawprintScreen extends Screen {
         return false;
     }
 
-    private void renderModeButton(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+    private void renderModeButton(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY) {
         int x = left + MODE_X;
         int y = top + MODE_Y;
         int v = textureVForState(mouseX, mouseY, x, y, MODE_WIDTH, MODE_HEIGHT, MODE_NORMAL_V, MODE_HOVER_V, MODE_PRESSED_V);
-        guiGraphics.blit(TEXTURE, x, y, MODE_U, v, MODE_WIDTH, MODE_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) MODE_U, (float) v, MODE_WIDTH, MODE_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
-    private void renderChannelButton(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+    private void renderChannelButton(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY) {
         int x = left + CHANNEL_X;
         int y = top + CHANNEL_Y;
         int u = switch (this.selectedChannel) {
@@ -295,10 +307,10 @@ public class PawprintScreen extends Screen {
             default -> CHANNEL_AB_U;
         };
         int v = isInside(mouseX, mouseY, x, y, CHANNEL_WIDTH, CHANNEL_HEIGHT) ? CHANNEL_HOVER_V : CHANNEL_NORMAL_V;
-        guiGraphics.blit(TEXTURE, x, y, u, v, CHANNEL_WIDTH, CHANNEL_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) v, CHANNEL_WIDTH, CHANNEL_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
-    private void renderModeText(GuiGraphics guiGraphics, int left, int top) {
+    private void renderModeText(GuiGraphicsExtractor guiGraphics, int left, int top) {
         Component text = this.pawprintMode.displayName();
         int textWidth = this.font.width(text);
         boolean pressed = this.leftMouseDown && isInside(this.minecraft != null ? this.minecraft.mouseHandler.xpos() * this.minecraft.getWindow().getGuiScaledWidth() / this.minecraft.getWindow().getScreenWidth() : -1,
@@ -307,10 +319,10 @@ public class PawprintScreen extends Screen {
         int pressedOffset = pressed ? 1 : 0;
         int textX = left + MODE_X + (MODE_WIDTH - textWidth) / 2 + pressedOffset;
         int textY = top + MODE_Y + 2 + pressedOffset;
-        guiGraphics.drawString(this.font, text, textX, textY, 0xFFFFFF, false);
+        guiGraphics.text(this.font, text, textX, textY, 0xFFFFFFFF);
     }
 
-    private void renderPawprintName(GuiGraphics guiGraphics, int left, int top) {
+    private void renderPawprintName(GuiGraphicsExtractor guiGraphics, int left, int top) {
         ItemStack stack = getHeldPawprintStack();
         if (stack.isEmpty()) {
             return;
@@ -318,56 +330,56 @@ public class PawprintScreen extends Screen {
         Component name = stack.getHoverName();
         int textX = left + ITEM_NAME_CENTER_X - this.font.width(name) / 2;
         int textY = top + ITEM_NAME_CENTER_Y - this.font.lineHeight / 2;
-        guiGraphics.drawString(this.font, name, textX, textY, 0xFFFFFF, false);
+        guiGraphics.text(this.font, name, textX, textY, 0xFFFFFFFF);
     }
 
-    private void renderStrengthBar(GuiGraphics guiGraphics, int left, int top) {
+    private void renderStrengthBar(GuiGraphicsExtractor guiGraphics, int left, int top) {
         int litWidth = Math.max(0, Math.min(BAR_WIDTH, this.sliderCenterX - TRACK_MIN_CENTER_X + 1));
         int darkWidth = Math.max(0, BAR_WIDTH - litWidth);
 
         if (litWidth > 0) {
-            guiGraphics.blit(TEXTURE, left + BAR_X, top + BAR_Y, BAR_U, BAR_LIT_V, litWidth, BAR_HEIGHT);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, left + BAR_X, top + BAR_Y, (float) BAR_U, (float) BAR_LIT_V, litWidth, BAR_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         }
         if (darkWidth > 0) {
-            guiGraphics.blit(TEXTURE, left + BAR_X + litWidth, top + BAR_Y, BAR_U + litWidth, BAR_DARK_V, darkWidth, BAR_HEIGHT);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, left + BAR_X + litWidth, top + BAR_Y, (float) BAR_U + litWidth, (float) BAR_DARK_V, darkWidth, BAR_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         }
     }
 
-    private void renderPawprintIcon(GuiGraphics guiGraphics, int left, int top) {
+    private void renderPawprintIcon(GuiGraphicsExtractor guiGraphics, int left, int top) {
         ItemStack stack = getHeldPawprintStack();
         if (stack.isEmpty()) {
             return;
         }
 
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(left + ITEM_ICON_X, top + ITEM_ICON_Y, 0);
-        guiGraphics.pose().scale(2.0F, 2.0F, 1.0F);
-        guiGraphics.renderItem(stack, 0, 0);
-        guiGraphics.renderItemDecorations(this.font, stack, 0, 0);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(left + ITEM_ICON_X, top + ITEM_ICON_Y);
+        guiGraphics.pose().scale(2.0F, 2.0F);
+        guiGraphics.item(stack, 0, 0);
+        guiGraphics.itemDecorations(this.font, stack, 0, 0);
+        guiGraphics.pose().popMatrix();
     }
 
-    private void renderSlider(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+    private void renderSlider(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY) {
         int x = left + this.sliderCenterX + SLIDER_CENTER_OFFSET_X - (SLIDER_WIDTH / 2);
         int y = top + TRACK_CENTER_Y - (SLIDER_HEIGHT / 2);
         boolean hover = isInside(mouseX, mouseY, x, y, SLIDER_WIDTH, SLIDER_HEIGHT);
         int u = this.draggingSlider ? SLIDER_PRESSED_U : hover ? SLIDER_HOVER_U : SLIDER_NORMAL_U;
-        guiGraphics.blit(TEXTURE, x, y, u, SLIDER_V, SLIDER_WIDTH, SLIDER_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) SLIDER_V, SLIDER_WIDTH, SLIDER_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
-    private void renderStrengthModeButtons(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+    private void renderStrengthModeButtons(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY) {
         renderStrengthModeButton(guiGraphics, left + MODE_BUTTON_X, top + MODE_BUTTON_Y, mouseX, mouseY);
     }
 
-    private void renderStrengthModeButton(GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY) {
+    private void renderStrengthModeButton(GuiGraphicsExtractor guiGraphics, int x, int y, int mouseX, int mouseY) {
         boolean hover = isInside(mouseX, mouseY, x, y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE);
         int u = this.hardMode ? HARD_NORMAL_U : SOFT_NORMAL_U;
         int v = textureVForState(mouseX, mouseY, x, y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE,
                 MODE_BUTTON_NORMAL_V, MODE_BUTTON_HOVER_V, MODE_BUTTON_PRESSED_V);
-        guiGraphics.blit(TEXTURE, x, y, u, v, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) v, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
-    private void renderRuleBlocks(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY) {
+    private void renderRuleBlocks(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY) {
         guiGraphics.enableScissor(left + RULE_X, top + RULES_VIEWPORT_TOP, left + RULE_X + RULE_WIDTH, top + RULES_VIEWPORT_BOTTOM);
         for (int index = 0; index < this.rules.size(); index++) {
             RuleEntry rule = this.rules.get(index);
@@ -377,17 +389,17 @@ public class PawprintScreen extends Screen {
                 continue;
             }
 
-            guiGraphics.blit(TEXTURE, ruleX, ruleY, RULE_U, RULE_V, RULE_WIDTH, RULE_HEIGHT);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, ruleX, ruleY, (float) RULE_U, (float) RULE_V, RULE_WIDTH, RULE_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
 
             int toggleX = ruleX + RULE_TOGGLE_OFFSET_X;
             int toggleY = ruleY + RULE_TOGGLE_OFFSET_Y;
             renderRuleToggle(guiGraphics, toggleX, toggleY, mouseX, mouseY, rule.enabled);
-            guiGraphics.drawString(this.font, rule.name, ruleX + 5, ruleY + 4, 0xFFFFFF, false);
+            guiGraphics.text(this.font, rule.name, ruleX + 5, ruleY + 4, 0xFFFFFFFF);
         }
         guiGraphics.disableScissor();
     }
 
-    private void renderRuleToggle(GuiGraphics guiGraphics, int x, int y, int mouseX, int mouseY, boolean enabled) {
+    private void renderRuleToggle(GuiGraphicsExtractor guiGraphics, int x, int y, int mouseX, int mouseY, boolean enabled) {
         boolean hover = isInside(mouseX, mouseY, x, y, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE);
         boolean pressed = hover && this.leftMouseDown;
         int u;
@@ -399,7 +411,7 @@ public class PawprintScreen extends Screen {
             u = pressed ? RULE_TOGGLE_OFF_PRESSED_U : hover ? RULE_TOGGLE_OFF_HOVER_U : RULE_TOGGLE_OFF_U;
             v = RULE_TOGGLE_OFF_V;
         }
-        guiGraphics.blit(TEXTURE, x, y, u, v, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, y, (float) u, (float) v, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
     private boolean isRuleVisible(int top, int ruleY) {
@@ -419,11 +431,11 @@ public class PawprintScreen extends Screen {
         this.sliderCenterX = clamp(localX, TRACK_MIN_CENTER_X, TRACK_MAX_CENTER_X);
     }
 
-    private void renderHoverTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY, int left, int top) {
+    private void renderHoverTooltip(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, int left, int top) {
         if (isInside(mouseX, mouseY, left + ITEM_ICON_X, top + ITEM_ICON_Y, ITEM_ICON_SIZE, ITEM_ICON_SIZE)) {
             ItemStack stack = getHeldPawprintStack();
             if (!stack.isEmpty()) {
-                guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(this.font, stack, mouseX, mouseY);
             }
             return;
         }
@@ -431,7 +443,7 @@ public class PawprintScreen extends Screen {
         int sliderX = left + this.sliderCenterX + SLIDER_CENTER_OFFSET_X - (SLIDER_WIDTH / 2);
         int sliderY = top + TRACK_CENTER_Y - (SLIDER_HEIGHT / 2);
         if (isInside(mouseX, mouseY, sliderX, sliderY, SLIDER_WIDTH, SLIDER_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font, Component.literal(String.valueOf(sliderXToStrength(this.sliderCenterX))), mouseX, mouseY);
+            guiGraphics.setTooltipForNextFrame(this.font, Component.literal(String.valueOf(sliderXToStrength(this.sliderCenterX))), mouseX, mouseY);
             return;
         }
 
@@ -447,12 +459,12 @@ public class PawprintScreen extends Screen {
                 tooltip.add(Component.literal("67-100对应疼痛阈值到强度上限,适合用于惩罚"));
                 tooltip.add(Component.literal("需要对方提前设置相应数值"));
             }
-            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+            guiGraphics.setComponentTooltipForNextFrame(this.font, tooltip, mouseX, mouseY);
             return;
         }
 
         if (isInside(mouseX, mouseY, left + CHANNEL_X, top + CHANNEL_Y, CHANNEL_WIDTH, CHANNEL_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font, Component.literal("通道: " + channelLabel(this.selectedChannel)), mouseX, mouseY);
+            guiGraphics.setTooltipForNextFrame(this.font, Component.literal("通道: " + channelLabel(this.selectedChannel)), mouseX, mouseY);
             return;
         }
 
@@ -467,7 +479,7 @@ public class PawprintScreen extends Screen {
             int toggleX = ruleX + RULE_TOGGLE_OFFSET_X;
             int toggleY = ruleY + RULE_TOGGLE_OFFSET_Y;
             if (isInside(mouseX, mouseY, toggleX, toggleY, RULE_TOGGLE_SIZE, RULE_TOGGLE_SIZE)) {
-                guiGraphics.renderTooltip(this.font, List.of(
+                guiGraphics.setTooltipForNextFrame(this.font, List.of(
                         Component.literal("左键开启/关闭此规则"),
                         Component.literal("右键进入详细设置")
                 ), java.util.Optional.empty(), mouseX, mouseY);
@@ -475,7 +487,7 @@ public class PawprintScreen extends Screen {
             }
 
             if (isInside(mouseX, mouseY, ruleX, ruleY, RULE_WIDTH, RULE_HEIGHT)) {
-                guiGraphics.renderTooltip(this.font, Component.literal(rule.handler.getDescription()), mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(this.font, Component.literal(rule.handler.getDescription()), mouseX, mouseY);
                 return;
             }
         }

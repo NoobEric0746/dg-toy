@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.InsideBlockEffectApplier;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -45,9 +46,8 @@ public class ElectrifiedWireNettingBlock extends Block {
     }
 
     @Override
-    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        super.entityInside(state, level, pos, entity);
-        if (level.isClientSide || !(entity instanceof ServerPlayer player)) {
+    protected void entityInside(BlockState state, Level level, BlockPos pos, Entity entity, InsideBlockEffectApplier applier, boolean isInside) {
+        if (level.isClientSide() || !(entity instanceof ServerPlayer player)) {
             return;
         }
 
@@ -57,7 +57,7 @@ public class ElectrifiedWireNettingBlock extends Block {
         }
 
         CompoundTag persistentData = player.getPersistentData();
-        boolean enteredNetting = persistentData.getLong(LAST_CONTACT_TICK_TAG) != gameTime - 1;
+        boolean enteredNetting = persistentData.getLongOr(LAST_CONTACT_TICK_TAG, 0L) != gameTime - 1;
 
         persistentData.putLong(LAST_CONTACT_TICK_TAG, gameTime);
         if (enteredNetting) {
@@ -68,7 +68,7 @@ public class ElectrifiedWireNettingBlock extends Block {
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
-        if (!level.isClientSide && !state.is(oldState.getBlock())) {
+        if (!level.isClientSide() && !state.is(oldState.getBlock())) {
             level.scheduleTick(pos, this, 1);
         }
     }
@@ -118,7 +118,7 @@ public class ElectrifiedWireNettingBlock extends Block {
         }
 
         if (persistentData.contains(LAST_SHOCK_TICK_TAG)
-                && gameTime - persistentData.getLong(LAST_SHOCK_TICK_TAG) < SHOCK_INTERVAL_TICKS) {
+                && gameTime - persistentData.getLongOr(LAST_SHOCK_TICK_TAG, 0L) < SHOCK_INTERVAL_TICKS) {
             return;
         }
 

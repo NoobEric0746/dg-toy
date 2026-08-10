@@ -1,16 +1,18 @@
 package org.nooberic.dg_toy.client.screen;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.block.entity.DgBeaconBlockEntity;
 import org.nooberic.dg_toy.item.DgBeaconItem;
@@ -20,7 +22,8 @@ import org.nooberic.dg_toy.network.DgToyNetworking;
 
 @OnlyIn(Dist.CLIENT)
 public class BeaconScreen extends Screen {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(Dg_toy.MODID, "textures/gui/gui_beacon.png");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(Dg_toy.MODID, "textures/gui/gui_beacon.png");
+    private static final int TEXTURE_SIZE = 256;
 
     private static final int UI_WIDTH = 115;
     private static final int UI_HEIGHT = 133;
@@ -79,29 +82,29 @@ public class BeaconScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
-        int left = leftPos();
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+                int left = leftPos();
         int top = topPos();
 
-        RenderSystem.enableBlend();
-        guiGraphics.blit(TEXTURE, left, top, 0, 0, UI_WIDTH, UI_HEIGHT);
+                guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, left, top, (float) 0, (float) 0, UI_WIDTH, UI_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         renderBeaconIcon(guiGraphics, left, top);
         renderTrack(guiGraphics, left, top);
         renderSlider(guiGraphics, left, top, mouseX, mouseY, DraggedSlider.LEFT);
         renderSlider(guiGraphics, left, top, mouseX, mouseY, DraggedSlider.RIGHT);
-        RenderSystem.disableBlend();
-
+        
         renderBeaconName(guiGraphics, left, top);
     renderDistanceRangeLabel(guiGraphics, left, top);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
         renderHoverTooltip(guiGraphics, mouseX, mouseY, left, top);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button != 0) {
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, doubleClick);
         }
 
         int left = leftPos();
@@ -120,38 +123,46 @@ public class BeaconScreen extends Screen {
             updateSlider(mouseX, left);
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+    public boolean mouseDragged(MouseButtonEvent event, double dragX, double dragY) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0 && this.draggedSlider != null) {
             updateSlider(mouseX, leftPos());
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseDragged(event, dragX, dragY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        int button = event.button();
         if (button == 0 && this.draggedSlider != null) {
             updateSlider(mouseX, leftPos());
             this.draggedSlider = null;
             this.dragGrabOffsetX = 0;
             return true;
         }
-        return super.mouseReleased(mouseX, mouseY, button);
+        return super.mouseReleased(event);
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256 || this.minecraft != null && this.minecraft.options.keyInventory.matches(keyCode, scanCode)) {
+    public boolean keyPressed(KeyEvent event) {
+        int keyCode = event.key();
+        int scanCode = event.scancode();
+        if (keyCode == 256 || this.minecraft != null && this.minecraft.options.keyInventory.matches(event)) {
             if (this.minecraft != null) {
                 this.minecraft.setScreen(null);
             }
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(event);
     }
 
     @Override
@@ -159,21 +170,21 @@ public class BeaconScreen extends Screen {
         return false;
     }
 
-    private void renderBeaconIcon(GuiGraphics guiGraphics, int left, int top) {
+    private void renderBeaconIcon(GuiGraphicsExtractor guiGraphics, int left, int top) {
         ItemStack stack = getBeaconStack();
         if (stack.isEmpty()) {
             return;
         }
 
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(left + ITEM_ICON_X, top + ITEM_ICON_Y, 0);
-        guiGraphics.pose().scale(2.0F, 2.0F, 1.0F);
-        guiGraphics.renderItem(stack, 0, 0);
-        guiGraphics.renderItemDecorations(this.font, stack, 0, 0);
-        guiGraphics.pose().popPose();
+        guiGraphics.pose().pushMatrix();
+        guiGraphics.pose().translate(left + ITEM_ICON_X, top + ITEM_ICON_Y);
+        guiGraphics.pose().scale(2.0F, 2.0F);
+        guiGraphics.item(stack, 0, 0);
+        guiGraphics.itemDecorations(this.font, stack, 0, 0);
+        guiGraphics.pose().popMatrix();
     }
 
-    private void renderBeaconName(GuiGraphics guiGraphics, int left, int top) {
+    private void renderBeaconName(GuiGraphicsExtractor guiGraphics, int left, int top) {
         ItemStack stack = getBeaconStack();
         if (stack.isEmpty()) {
             return;
@@ -182,14 +193,14 @@ public class BeaconScreen extends Screen {
         Component name = stack.getHoverName();
         int textX = left + ITEM_NAME_CENTER_X - this.font.width(name) / 2;
         int textY = top + ITEM_NAME_CENTER_Y - this.font.lineHeight / 2;
-        guiGraphics.drawString(this.font, name, textX, textY, 0xFFFFFF, false);
+        guiGraphics.text(this.font, name, textX, textY, 0xFFFFFFFF);
     }
 
-    private void renderDistanceRangeLabel(GuiGraphics guiGraphics, int left, int top) {
-        guiGraphics.drawString(this.font, "允许的距离范围", left + 11, top + 39, 0xFFFFFF, false);
+    private void renderDistanceRangeLabel(GuiGraphicsExtractor guiGraphics, int left, int top) {
+        guiGraphics.text(this.font, "允许的距离范围", left + 11, top + 39, 0xFFFFFFFF);
     }
 
-    private void renderTrack(GuiGraphics guiGraphics, int left, int top) {
+    private void renderTrack(GuiGraphicsExtractor guiGraphics, int left, int top) {
         int minimumDistanceSliderX = sliderX(this.minimumDistanceLimitStep, left);
         int maximumDistanceSliderX = sliderX(this.maximumDistanceLimitStep, left);
         int litStart = minimumDistanceSliderX + (SLIDER_WIDTH / 2);
@@ -200,22 +211,22 @@ public class BeaconScreen extends Screen {
         int rightDarkWidth = Math.max(0, TRACK_WIDTH - leftDarkWidth - litWidth);
 
         if (leftDarkWidth > 0) {
-            guiGraphics.blit(TEXTURE, trackX, top + TRACK_Y, TRACK_U, TRACK_DARK_V, leftDarkWidth, TRACK_HEIGHT);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, trackX, top + TRACK_Y, (float) TRACK_U, (float) TRACK_DARK_V, leftDarkWidth, TRACK_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         }
         if (litWidth > 0) {
-            guiGraphics.blit(TEXTURE, trackX + leftDarkWidth, top + TRACK_Y, TRACK_U + leftDarkWidth, TRACK_LIT_V, litWidth, TRACK_HEIGHT);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, trackX + leftDarkWidth, top + TRACK_Y, (float) TRACK_U + leftDarkWidth, (float) TRACK_LIT_V, litWidth, TRACK_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         }
         if (rightDarkWidth > 0) {
-            guiGraphics.blit(TEXTURE, trackX + leftDarkWidth + litWidth, top + TRACK_Y, TRACK_U + leftDarkWidth + litWidth, TRACK_DARK_V, rightDarkWidth, TRACK_HEIGHT);
+            guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, trackX + leftDarkWidth + litWidth, top + TRACK_Y, (float) TRACK_U + leftDarkWidth + litWidth, (float) TRACK_DARK_V, rightDarkWidth, TRACK_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
         }
     }
 
-    private void renderSlider(GuiGraphics guiGraphics, int left, int top, int mouseX, int mouseY, DraggedSlider slider) {
+    private void renderSlider(GuiGraphicsExtractor guiGraphics, int left, int top, int mouseX, int mouseY, DraggedSlider slider) {
         int step = slider == DraggedSlider.LEFT ? this.minimumDistanceLimitStep : this.maximumDistanceLimitStep;
         int x = sliderX(step, left);
         boolean hover = isInside(mouseX, mouseY, x, top + SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT);
         int u = this.draggedSlider == slider ? SLIDER_PRESSED_U : hover ? SLIDER_HOVER_U : SLIDER_NORMAL_U;
-        guiGraphics.blit(TEXTURE, x, top + SLIDER_Y, u, SLIDER_V, SLIDER_WIDTH, SLIDER_HEIGHT);
+        guiGraphics.blit(RenderPipelines.GUI_TEXTURED, TEXTURE, x, top + SLIDER_Y, (float) u, (float) SLIDER_V, SLIDER_WIDTH, SLIDER_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
     }
 
     private void updateSlider(double mouseX, int left) {
@@ -239,19 +250,19 @@ public class BeaconScreen extends Screen {
         }
     }
 
-    private void renderHoverTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY, int left, int top) {
+    private void renderHoverTooltip(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, int left, int top) {
         if (isInside(mouseX, mouseY, sliderX(this.minimumDistanceLimitStep, left), top + SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font, sliderTooltip(this.minimumDistanceLimitStep), mouseX, mouseY);
+            guiGraphics.setTooltipForNextFrame(this.font, sliderTooltip(this.minimumDistanceLimitStep), mouseX, mouseY);
             return;
         }
         if (isInside(mouseX, mouseY, sliderX(this.maximumDistanceLimitStep, left), top + SLIDER_Y, SLIDER_WIDTH, SLIDER_HEIGHT)) {
-            guiGraphics.renderTooltip(this.font, sliderTooltip(this.maximumDistanceLimitStep), mouseX, mouseY);
+            guiGraphics.setTooltipForNextFrame(this.font, sliderTooltip(this.maximumDistanceLimitStep), mouseX, mouseY);
             return;
         }
         if (isInside(mouseX, mouseY, left + ITEM_ICON_X, top + ITEM_ICON_Y, 32, 32)) {
             ItemStack stack = getBeaconStack();
             if (!stack.isEmpty()) {
-                guiGraphics.renderTooltip(this.font, stack, mouseX, mouseY);
+                guiGraphics.setTooltipForNextFrame(this.font, stack, mouseX, mouseY);
             }
         }
     }
@@ -277,7 +288,7 @@ public class BeaconScreen extends Screen {
                 return;
             }
             DgBeaconItem.setDistanceLimits(stack, minimumDistanceLimit, maximumDistanceLimit);
-            DgToyNetworking.sendToServer(new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit));
+            DgToyNetworking.sendToServer(new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit, null));
         } else {
             DgToyNetworking.sendToServer(new DgToyC2SBeaconDistanceLimitsSyncPacket(minimumDistanceLimit, maximumDistanceLimit, this.blockPos));
         }

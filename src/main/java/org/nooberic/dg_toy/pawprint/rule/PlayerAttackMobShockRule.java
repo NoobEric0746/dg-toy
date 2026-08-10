@@ -1,7 +1,7 @@
 package org.nooberic.dg_toy.pawprint.rule;
 
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
 import org.nooberic.dg_toy.pawprint.BasePawprintRuleHandler;
 import org.nooberic.dg_toy.pawprint.PawprintEffect;
 import org.nooberic.dg_toy.pawprint.PawprintRuleContext;

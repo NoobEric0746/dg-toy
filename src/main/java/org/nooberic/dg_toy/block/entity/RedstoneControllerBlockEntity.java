@@ -1,10 +1,13 @@
 package org.nooberic.dg_toy.block.entity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -59,30 +62,28 @@ public class RedstoneControllerBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt("Strength", this.strength);
-        tag.putBoolean("HardMode", this.hardMode);
-        tag.putString("PulseId", this.pulseId);
-        tag.putInt("Duration", this.duration);
-        tag.putInt("Channel", this.channel);
-        tag.putInt("Frequency", this.frequency);
+    protected void saveAdditional(ValueOutput output) {
+        output.putInt("Strength", this.strength);
+        output.putBoolean("HardMode", this.hardMode);
+        output.putString("PulseId", this.pulseId);
+        output.putInt("Duration", this.duration);
+        output.putInt("Channel", this.channel);
+        output.putInt("Frequency", this.frequency);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        this.strength = clamp(tag.getInt("Strength"), 0, 100);
-        this.hardMode = !tag.contains("HardMode") || tag.getBoolean("HardMode");
-        this.pulseId = tag.getString("PulseId");
-        this.duration = tag.contains("Duration") ? clamp(tag.getInt("Duration"), 1, 10) : DEFAULT_DURATION;
-        this.channel = tag.contains("Channel") ? clamp(tag.getInt("Channel"), 1, 3) : DEFAULT_CHANNEL;
-        this.frequency = clamp(tag.getInt("Frequency"), 0, 65535);
+    public void loadAdditional(ValueInput input) {
+        this.strength = clamp(input.getIntOr("Strength", 0), 0, 100);
+        this.hardMode = input.getBooleanOr("HardMode", true);
+        this.pulseId = input.getStringOr("PulseId", "");
+        this.duration = clamp(input.getIntOr("Duration", DEFAULT_DURATION), 1, 10);
+        this.channel = clamp(input.getIntOr("Channel", DEFAULT_CHANNEL), 1, 3);
+        this.frequency = clamp(input.getIntOr("Frequency", 0), 0, 65535);
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        return this.saveWithoutMetadata();
+    public CompoundTag getUpdateTag(HolderLookup.Provider provider) {
+        return this.saveWithoutMetadata(provider);
     }
 
     @Nullable
@@ -93,7 +94,7 @@ public class RedstoneControllerBlockEntity extends BlockEntity {
 
     private void sync() {
         this.setChanged();
-        if (this.level != null && !this.level.isClientSide) {
+        if (this.level != null && !this.level.isClientSide()) {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
         }
     }

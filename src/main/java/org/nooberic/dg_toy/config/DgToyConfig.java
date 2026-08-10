@@ -1,15 +1,15 @@
 package org.nooberic.dg_toy.config;
 
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 public final class DgToyConfig {
-    public static final ForgeConfigSpec SPEC;
-    public static final ForgeConfigSpec.IntValue BEACON_SIGNAL_RANGE;
-    public static final ForgeConfigSpec.IntValue REDSTONE_CONTROLLER_RANGE;
-    public static final ForgeConfigSpec.IntValue ELECTRIFIED_WIRE_NETTING_STRENGTH;
+    public static final ModConfigSpec SPEC;
+    public static final ModConfigSpec.IntValue BEACON_SIGNAL_RANGE;
+    public static final ModConfigSpec.IntValue REDSTONE_CONTROLLER_RANGE;
+    public static final ModConfigSpec.IntValue ELECTRIFIED_WIRE_NETTING_STRENGTH;
 
     static {
-        ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
 
         builder.push("beacon");
         BEACON_SIGNAL_RANGE = builder

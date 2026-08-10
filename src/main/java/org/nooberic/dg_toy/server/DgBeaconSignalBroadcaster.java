@@ -2,18 +2,18 @@ package org.nooberic.dg_toy.server;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.event.DgBeaconSignalEvent;
 import org.nooberic.dg_toy.item.DgBeaconItem;
 
 import java.util.UUID;
 
-@Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dg_toy.MODID)
 public final class DgBeaconSignalBroadcaster {
     private static final int SIGNAL_INTERVAL_TICKS = 10;
     private static int tickCounter;
@@ -22,8 +22,8 @@ public final class DgBeaconSignalBroadcaster {
     }
 
     @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || ServerLifecycleHooks.getCurrentServer() == null) {
+    public static void onServerTick(ServerTickEvent.Post event) {
+        if (ServerLifecycleHooks.getCurrentServer() == null) {
             return;
         }
 
@@ -50,7 +50,7 @@ public final class DgBeaconSignalBroadcaster {
                 continue;
             }
 
-            MinecraftForge.EVENT_BUS.post(new DgBeaconSignalEvent(
+            NeoForge.EVENT_BUS.post(new DgBeaconSignalEvent(
                     player.position().add(0.0D, player.getBbHeight() * 0.5D, 0.0D),
                     collarUuid,
                     DgBeaconItem.getMinimumDistanceLimit(stack),

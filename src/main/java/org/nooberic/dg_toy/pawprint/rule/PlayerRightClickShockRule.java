@@ -1,6 +1,6 @@
 package org.nooberic.dg_toy.pawprint.rule;
 
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import org.nooberic.dg_toy.pawprint.BasePawprintRuleHandler;
 import org.nooberic.dg_toy.pawprint.PawprintEffect;
 import org.nooberic.dg_toy.pawprint.PawprintRuleContext;

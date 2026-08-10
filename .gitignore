@@ -19,3 +19,25 @@ hs_err_pid*
 
 # Common working directory
 run
+
+# Migration working files (not part of the published project)
+bin/
+libs/build/
+_apicheck*/
+_mcsrc*/
+_nfcls/
+_nfsrc/
+_ofcls/
+_original_backup/
+_scr/
+_vc/
+_jartmp/
+build_log*.txt
+compile*.txt
+err*.txt
+errs_*.txt
+nbt_usage.txt
+scan_all.txt
+bulk.py
+run_bulk.py
+w*.py

@@ -1,10 +1,13 @@
 package org.nooberic.dg_toy.client.screen;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -77,33 +80,32 @@ public class PawprintRuleSettingsScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 10, 0xFFFFFF);
-        guiGraphics.drawCenteredString(this.font, this.handler.getDescription(), this.width / 2, 25, 0xC0C0C0);
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick) {
+                guiGraphics.centeredText(this.font, this.title, this.width / 2, 10, 0xFFFFFFFF);
+        guiGraphics.centeredText(this.font, this.handler.getDescription(), this.width / 2, 25, 0xFFC0C0C0);
 
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTick);
 
         int contentTop = HEADER_HEIGHT;
         int contentBottom = this.height - FOOTER_HEIGHT;
         guiGraphics.enableScissor(0, contentTop, this.width, contentBottom);
         for (int index = 0; index < this.stringVariables.size(); index++) {
             int rowY = contentTop + index * ROW_HEIGHT - this.variableScrollOffset;
-            guiGraphics.drawString(this.font, this.stringVariables.get(index).displayName(), this.width / 2 - 112, rowY + 6, 0xFFFFFF, false);
+            guiGraphics.text(this.font, this.stringVariables.get(index).displayName(), this.width / 2 - 112, rowY + 6, 0xFFFFFFFF);
         }
         guiGraphics.disableScissor();
 
         if (getMaxScrollOffset() > 0) {
-            guiGraphics.drawString(this.font, "滚动查看变量", 6, contentBottom - 12, 0x808080, false);
+            guiGraphics.text(this.font, "滚动查看变量", 6, contentBottom - 12, 0xFF808080);
         }
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double scrollY) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         int contentTop = HEADER_HEIGHT;
         int contentBottom = this.height - FOOTER_HEIGHT;
         if (mouseY < contentTop || mouseY >= contentBottom || getMaxScrollOffset() == 0) {
-            return super.mouseScrolled(mouseX, mouseY, scrollY);
+            return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
         this.variableScrollOffset = clamp(this.variableScrollOffset - (int) Math.signum(scrollY) * ROW_HEIGHT, 0, getMaxScrollOffset());

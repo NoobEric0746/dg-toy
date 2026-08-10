@@ -1,11 +1,11 @@
 package org.nooberic.dg_toy.server;
 
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import org.nooberic.dg_toy.Dg_toy;
@@ -15,7 +15,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
-@Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dg_toy.MODID)
 public final class VirtualPairingManager {
     public static final long PAIRING_WINDOW_TICKS = 200L;
 
@@ -80,8 +80,8 @@ public final class VirtualPairingManager {
     }
 
     @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || ServerLifecycleHooks.getCurrentServer() == null) {
+    public static void onServerTick(ServerTickEvent.Post event) {
+        if (ServerLifecycleHooks.getCurrentServer() == null) {
             return;
         }
 
@@ -98,11 +98,11 @@ public final class VirtualPairingManager {
     }
 
     public static long getCurrentLogicalTime(ServerPlayer player) {
-        return player.serverLevel().getServer().overworld().getGameTime();
+        return player.level().getServer().overworld().getGameTime();
     }
 
     public static long getCurrentLogicalTime() {
-        var server = net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer();
+        var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
         return server == null ? 0L : server.overworld().getGameTime();
     }
 

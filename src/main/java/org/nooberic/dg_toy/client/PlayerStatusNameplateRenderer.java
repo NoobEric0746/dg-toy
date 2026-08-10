@@ -2,38 +2,28 @@ package org.nooberic.dg_toy.client;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.Player;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderNameTagEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import org.joml.Matrix4f;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.RenderNameTagEvent;
 import org.nooberic.dg_toy.Dg_toy;
 
-@Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+/**
+ * 26.1.2 rework: RenderNameTagEvent 拆分为 CanRender/DoRender，名字标签走新的
+ * render-state 管线。这里通过 CanRender#setContent 把连接/配对状态追加到名字标签上
+ * （放弃旧的手绘图标绘制）。
+ */
+@EventBusSubscriber(modid = Dg_toy.MODID, value = Dist.CLIENT)
 public final class PlayerStatusNameplateRenderer {
-    private static final float TEXT_SCALE = 0.025F;
-    private static final float Y_OFFSET = 100.0F;
-    private static final ResourceLocation POWERBOX_ICON = new ResourceLocation(Dg_toy.MODID, "textures/gui/status/icon_powerbox.png");
-    private static final ResourceLocation CONTROLLER_ICON = new ResourceLocation(Dg_toy.MODID, "textures/gui/status/icon_controller.png");
-    private static final float ICON_TEXT_GAP = 2.0F;
-    private static final float GROUP_GAP = 8.0F;
-
     private PlayerStatusNameplateRenderer() {
     }
 
     @SubscribeEvent
-    public static void onRenderNameTag(RenderNameTagEvent event) {
+    public static void onRenderNameTag(RenderNameTagEvent.CanRender event) {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
@@ -44,110 +34,37 @@ public final class PlayerStatusNameplateRenderer {
             return;
         }
 
-        NameplateStatusDisplay display = buildStatusDisplay(player, localPlayer);
-        if (display.isEmpty()) {
+        Component status = buildStatusText(player, localPlayer);
+        if (status == null) {
             return;
         }
 
-        event.getPoseStack().pushPose();
-        event.getPoseStack().translate(0.0F, Y_OFFSET * TEXT_SCALE, 0.0F);
-
-        EntityRenderDispatcher dispatcher = mc.getEntityRenderDispatcher();
-        event.getPoseStack().mulPose(dispatcher.cameraOrientation());
-        event.getPoseStack().scale(-TEXT_SCALE, -TEXT_SCALE, TEXT_SCALE);
-
-        Matrix4f matrix = event.getPoseStack().last().pose();
-        Font font = mc.font;
-        float totalWidth = display.width(font);
-        float x = -totalWidth / 2.0F;
-        int backgroundColor = (int) (mc.options.getBackgroundOpacity(0.25F) * 255.0F) << 24;
-        MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-
-        display.draw(event.getPoseStack(), font, matrix, bufferSource, x, backgroundColor);
-        bufferSource.endBatch();
-
-        event.getPoseStack().popPose();
+        Component original = event.getContent();
+        event.setContent(original.copy().append(Component.literal("  ")).append(status));
     }
 
-    private static NameplateStatusDisplay buildStatusDisplay(Player player, LocalPlayer localPlayer) {
+    private static Component buildStatusText(Player player, LocalPlayer localPlayer) {
         PlayerConnectionStatusSnapshot snapshot = PlayerStatusClientCache.get(player.getUUID());
         if (!snapshot.showNameplate()) {
-            return NameplateStatusDisplay.empty();
+            return null;
         }
-
         boolean connected = snapshot.connected();
         boolean virtuallyBound = snapshot.virtuallyBound();
         long pairingExpiresAtMs = snapshot.pairingExpiresAtMs();
 
-        return new NameplateStatusDisplay(
-                POWERBOX_ICON,
-                getPowerboxStatusText(connected),
-                CONTROLLER_ICON,
-                buildVirtualPairingText(virtuallyBound, pairingExpiresAtMs)
-        );
-    }
+        MutableComponent text = Component.empty();
+        text.append(Component.literal(connected ? "[ON]" : "[OFF]")
+                .withStyle(connected ? ChatFormatting.GREEN : ChatFormatting.GRAY));
 
-    private static Component getPowerboxStatusText(boolean connected) {
-        return Component.literal(connected ? "✔" : "✘")
-                .withStyle(connected ? ChatFormatting.GREEN : ChatFormatting.GRAY);
-    }
-
-    private static Component buildVirtualPairingText(boolean virtuallyBound, long pairingExpiresAtMs) {
         if (pairingExpiresAtMs > System.currentTimeMillis()) {
-            return Component.literal("配对中").withStyle(ChatFormatting.YELLOW);
-        }
-        return Component.literal(virtuallyBound ? "✔" : "✘")
-                .withStyle(virtuallyBound ? ChatFormatting.GREEN : ChatFormatting.GRAY);
-    }
-
-    private record NameplateStatusDisplay(ResourceLocation leftIcon, Component leftText, ResourceLocation rightIcon, Component rightText) {
-        static NameplateStatusDisplay empty() {
-            Component empty = Component.empty();
-            return new NameplateStatusDisplay(POWERBOX_ICON, empty, CONTROLLER_ICON, empty);
+            text.append(Component.literal(" [PAIRING]").withStyle(ChatFormatting.YELLOW));
+        } else if (virtuallyBound) {
+            text.append(Component.literal(" [BOUND]").withStyle(ChatFormatting.GREEN));
         }
 
-        boolean isEmpty() {
-            return leftText.getString().isEmpty() && rightText.getString().isEmpty();
+        if (text.getString().isEmpty()) {
+            return null;
         }
-
-        float width(Font font) {
-            float iconSize = font.lineHeight;
-            return iconSize + ICON_TEXT_GAP + font.width(leftText)
-                    + GROUP_GAP
-                    + iconSize + ICON_TEXT_GAP + font.width(rightText);
-        }
-
-        void draw(PoseStack poseStack, Font font, Matrix4f matrix, MultiBufferSource.BufferSource bufferSource, float startX, int backgroundColor) {
-            float iconSize = font.lineHeight;
-            float y = -(font.lineHeight - iconSize) / 2.0F;
-            float x = startX;
-
-            drawIcon(poseStack, bufferSource, leftIcon, x, y, iconSize);
-            x += iconSize + ICON_TEXT_GAP;
-            drawText(font, matrix, bufferSource, leftText, x, 0.0F, backgroundColor);
-            x += font.width(leftText) + GROUP_GAP;
-
-            drawIcon(poseStack, bufferSource, rightIcon, x, y, iconSize);
-            x += iconSize + ICON_TEXT_GAP;
-            drawText(font, matrix, bufferSource, rightText, x, 0.0F, backgroundColor);
-        }
-
-        private static void drawText(Font font, Matrix4f matrix, MultiBufferSource.BufferSource bufferSource, Component text, float x, float y, int backgroundColor) {
-            font.drawInBatch(text, x, y, 0x20FFFFFF, false, matrix, bufferSource, Font.DisplayMode.SEE_THROUGH, backgroundColor, LightTexture.FULL_BRIGHT);
-            font.drawInBatch(text, x, y, 0xFFFFFFFF, false, matrix, bufferSource, Font.DisplayMode.NORMAL, 0, LightTexture.FULL_BRIGHT);
-        }
-
-        private static void drawIcon(PoseStack poseStack, MultiBufferSource.BufferSource bufferSource, ResourceLocation texture, float x, float y, float size) {
-            Matrix4f matrix = poseStack.last().pose();
-            drawIcon(bufferSource.getBuffer(RenderType.textSeeThrough(texture)), matrix, x, y, size);
-            drawIcon(bufferSource.getBuffer(RenderType.text(texture)), matrix, x, y, size);
-        }
-
-        private static void drawIcon(VertexConsumer buffer, Matrix4f matrix, float x, float y, float size) {
-            buffer.vertex(matrix, x, y + size, 0.0F).color(255, 255, 255, 255).uv(0.0F, 1.0F).uv2(LightTexture.FULL_BRIGHT).endVertex();
-            buffer.vertex(matrix, x + size, y + size, 0.0F).color(255, 255, 255, 255).uv(1.0F, 1.0F).uv2(LightTexture.FULL_BRIGHT).endVertex();
-            buffer.vertex(matrix, x + size, y, 0.0F).color(255, 255, 255, 255).uv(1.0F, 0.0F).uv2(LightTexture.FULL_BRIGHT).endVertex();
-            buffer.vertex(matrix, x, y, 0.0F).color(255, 255, 255, 255).uv(0.0F, 0.0F).uv2(LightTexture.FULL_BRIGHT).endVertex();
-        }
+        return text;
     }
 }

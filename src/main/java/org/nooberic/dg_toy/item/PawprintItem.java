@@ -2,16 +2,20 @@ package org.nooberic.dg_toy.item;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.nooberic.dg_toy.client.screen.PawprintScreen;
+import org.nooberic.dg_toy.util.ItemStackNbt;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import top.theillusivec4.curios.api.CuriosCapability;
+import top.theillusivec4.curios.api.SlotContext;
+import top.theillusivec4.curios.api.type.capability.ICurio;
 
 public class PawprintItem extends Item {
     private static final String MODE_TAG = "PawprintMode";
@@ -58,8 +62,12 @@ public class PawprintItem extends Item {
         }
     }
 
-    public PawprintItem() {
-        super(new Properties().stacksTo(1));
+    public PawprintItem(Item.Properties properties) {
+        super(properties.stacksTo(1));
+    }
+
+    public static void registerCurioCapability(RegisterCapabilitiesEvent event) {
+        event.registerItem(CuriosCapability.ITEM, (stack, context) -> new PawprintCurio(stack), ModItems.PAWPRINT.get());
     }
 
     @Override
@@ -68,34 +76,58 @@ public class PawprintItem extends Item {
     }
 
     public static PawprintMode getMode(ItemStack stack) {
-        CompoundTag tag = stack.getOrCreateTag();
-        PawprintMode mode = PawprintMode.fromId(tag.getString(MODE_TAG));
-        if (!tag.contains(MODE_TAG) || !mode.id().equals(tag.getString(MODE_TAG))) {
-            tag.putString(MODE_TAG, mode.id());
+        String current = ItemStackNbt.getString(stack, MODE_TAG, "");
+        PawprintMode mode = PawprintMode.fromId(current);
+        if (!ItemStackNbt.contains(stack, MODE_TAG) || !mode.id().equals(current)) {
+            ItemStackNbt.putString(stack, MODE_TAG, mode.id());
         }
         return mode;
     }
 
     public static void setMode(ItemStack stack, PawprintMode mode) {
-        stack.getOrCreateTag().putString(MODE_TAG, mode.id());
+        ItemStackNbt.putString(stack, MODE_TAG, mode.id());
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResult use(Level level, Player player, InteractionHand hand) {
         ItemStack itemStack = player.getItemInHand(hand);
         if (hand != InteractionHand.MAIN_HAND) {
-            return InteractionResultHolder.pass(itemStack);
+            return InteractionResult.PASS;
         }
 
-        if (level.isClientSide) {
+        if (level.isClientSide()) {
             openScreen();
         }
-        return InteractionResultHolder.sidedSuccess(itemStack, level.isClientSide);
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.CONSUME;
     }
 
     @OnlyIn(Dist.CLIENT)
     private void openScreen() {
         Minecraft minecraft = Minecraft.getInstance();
         minecraft.setScreen(new PawprintScreen());
+    }
+
+    private static final class PawprintCurio implements ICurio {
+        private final ItemStack stack;
+
+        private PawprintCurio(ItemStack stack) {
+            this.stack = stack;
+        }
+
+        @Override
+        public ItemStack getStack() {
+            return this.stack;
+        }
+
+        @Override
+        public boolean canEquip(SlotContext slotContext) {
+            return true;
+        }
+
+
+        @Override
+        public boolean canSync(SlotContext slotContext) {
+            return true;
+        }
     }
 }

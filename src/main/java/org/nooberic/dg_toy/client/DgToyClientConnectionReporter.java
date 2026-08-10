@@ -1,18 +1,18 @@
 package org.nooberic.dg_toy.client;
 
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.network.DgToyC2SConnectionStatusPacket;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.nooberic.dglib.api.DgLibApi;
 import org.nooberic.dglib.service.DeviceStatus;
 
-@Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@EventBusSubscriber(modid = Dg_toy.MODID, value = Dist.CLIENT)
 public final class DgToyClientConnectionReporter {
     private static final long SYNC_INTERVAL_MS = 30_000L;
 
@@ -45,10 +45,7 @@ public final class DgToyClientConnectionReporter {
     }
 
     @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+    public static void onClientTick(ClientTickEvent.Post event) {
 
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.getConnection() == null) {

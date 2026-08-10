@@ -1,7 +1,5 @@
 package org.nooberic.dg_toy.client.model;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
@@ -11,35 +9,36 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.resources.Identifier;
 import org.nooberic.dg_toy.Dg_toy;
 
-public class PowerboxCurioModel extends HumanoidModel<net.minecraft.world.entity.LivingEntity> {
+public class PowerboxCurioModel extends HumanoidModel<HumanoidRenderState> {
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(
-            new ResourceLocation(Dg_toy.MODID, "powerbox_curio"),
+            Identifier.fromNamespaceAndPath(Dg_toy.MODID, "powerbox_curio"),
             "main"
     );
-    private final ModelPart bone;
 
     public PowerboxCurioModel(ModelPart root) {
         super(root);
-        this.bone = root.getChild("bone");
     }
 
     public static LayerDefinition createBodyLayer() {
         MeshDefinition meshDefinition = new MeshDefinition();
         PartDefinition partDefinition = meshDefinition.getRoot();
 
-        // Curios 的 HumanoidModel 渲染辅助需要这些标准节点，即使本饰品不使用它们。
-        partDefinition.addOrReplaceChild("head", CubeListBuilder.create(), PartPose.ZERO);
-        partDefinition.addOrReplaceChild("hat", CubeListBuilder.create(), PartPose.ZERO);
+        // Curios renders the whole model root; keep the standard humanoid parts empty
+        // so only the powerbox part below is drawn.
+        PartDefinition head = partDefinition.addOrReplaceChild("head", CubeListBuilder.create(), PartPose.ZERO);
+        head.addOrReplaceChild("hat", CubeListBuilder.create(), PartPose.ZERO);
         partDefinition.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.ZERO);
         partDefinition.addOrReplaceChild("right_arm", CubeListBuilder.create(), PartPose.ZERO);
         partDefinition.addOrReplaceChild("left_arm", CubeListBuilder.create(), PartPose.ZERO);
         partDefinition.addOrReplaceChild("right_leg", CubeListBuilder.create(), PartPose.ZERO);
-        partDefinition.addOrReplaceChild("left_leg", CubeListBuilder.create(), PartPose.ZERO);
+        // Keep the standard left-leg pose so the renderer's leftLeg.translateAndRotate
+        // anchors the model at the left hip (matching the vanilla humanoid layout).
+        partDefinition.addOrReplaceChild("left_leg", CubeListBuilder.create(), PartPose.offset(1.9F, 12.0F, 0.0F));
 
-        // 由 Blockbench 5.0.4 导出的 powerbox 模型。
         partDefinition.addOrReplaceChild(
             "bone",
             CubeListBuilder.create()
@@ -56,11 +55,6 @@ public class PowerboxCurioModel extends HumanoidModel<net.minecraft.world.entity
     }
 
     @Override
-    public void setupAnim(net.minecraft.world.entity.LivingEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack poseStack, VertexConsumer vertexConsumer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        this.bone.render(poseStack, vertexConsumer, packedLight, packedOverlay, red, green, blue, alpha);
+    public void setupAnim(HumanoidRenderState state) {
     }
 }

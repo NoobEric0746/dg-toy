@@ -1,12 +1,13 @@
 package org.nooberic.dg_toy.server;
 
+
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.nooberic.dg_toy.item.PowerboxItem;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.network.DgToyNetworking;
@@ -17,7 +18,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dg_toy.MODID)
 public final class PlayerStatusBroadcaster {
     private static final int SYNC_INTERVAL_TICKS = 20;
     private static final Map<UUID, SentStatus> LAST_SENT = new ConcurrentHashMap<>();
@@ -27,8 +28,8 @@ public final class PlayerStatusBroadcaster {
     }
 
     @SubscribeEvent
-    public static void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || ServerLifecycleHooks.getCurrentServer() == null) {
+    public static void onServerTick(ServerTickEvent.Post event) {
+        if (ServerLifecycleHooks.getCurrentServer() == null) {
             return;
         }
 
@@ -59,11 +60,11 @@ public final class PlayerStatusBroadcaster {
             return;
         }
 
-        PairingClearSavedData clearData = PairingClearSavedData.get(serverPlayer.server);
+        PairingClearSavedData clearData = PairingClearSavedData.get(serverPlayer.level().getServer());
         if (clearData.getClearFlag(serverPlayer.getUUID())) {
             clearData.setClearFlag(serverPlayer.getUUID(), false);
             PlayerPairingData.setBound(serverPlayer, false);
-            serverPlayer.displayClientMessage(net.minecraft.network.chat.Component.translatable("item.dg_toy.powerbox.disconnected_by_remote"), true);
+            PlayerMessageCompat.displayClientMessage(serverPlayer, net.minecraft.network.chat.Component.translatable("item.dg_toy.powerbox.disconnected_by_remote"), true);
         }
         broadcastNow(serverPlayer);
     }

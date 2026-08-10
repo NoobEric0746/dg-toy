@@ -3,20 +3,20 @@ package org.nooberic.dg_toy.pawprint;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.protocol.game.ServerboundMovePlayerPacket;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.ServerChatEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.event.entity.player.AttackEntityEvent;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.neoforge.event.ServerChatEvent;
+import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import org.nooberic.dg_toy.Dg_toy;
 import org.nooberic.dg_toy.config.DgToyConfig;
 import org.nooberic.dg_toy.event.DgBeaconSignalEvent;
 import org.nooberic.dg_toy.event.RedstoneControllerActivatedEvent;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 
-@Mod.EventBusSubscriber(modid = Dg_toy.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE)
+@EventBusSubscriber(modid = Dg_toy.MODID)
 public final class PawprintEventDispatcher {
     private PawprintEventDispatcher() {
     }
@@ -30,12 +30,12 @@ public final class PawprintEventDispatcher {
     }
 
     @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || !(event.player instanceof ServerPlayer owner)) {
+    public static void onPlayerTick(PlayerTickEvent.Post event) {
+        if (!(event.getEntity() instanceof ServerPlayer owner)) {
             return;
         }
 
-        for (BasePawprintRuleHandler<TickEvent.PlayerTickEvent> handler : PawprintRuleRegistry.getHandlers(TickEvent.PlayerTickEvent.class)) {
+        for (BasePawprintRuleHandler<PlayerTickEvent.Post> handler : PawprintRuleRegistry.getHandlers(PlayerTickEvent.Post.class)) {
             handler.handle(owner, event);
         }
     }
@@ -84,12 +84,12 @@ public final class PawprintEventDispatcher {
     }
 
     @SubscribeEvent
-    public static void onPlayerHurt(LivingHurtEvent event) {
+    public static void onPlayerHurt(LivingIncomingDamageEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer owner)) {
             return;
         }
 
-        for (BasePawprintRuleHandler<LivingHurtEvent> handler : PawprintRuleRegistry.getHandlers(LivingHurtEvent.class)) {
+        for (BasePawprintRuleHandler<LivingIncomingDamageEvent> handler : PawprintRuleRegistry.getHandlers(LivingIncomingDamageEvent.class)) {
             handler.handle(owner, event);
         }
     }
@@ -106,7 +106,31 @@ public final class PawprintEventDispatcher {
     }
 
     @SubscribeEvent
-    public static void onPlayerInteract(PlayerInteractEvent event) {
+    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        onPlayerInteract(event);
+    }
+
+    @SubscribeEvent
+    public static void onRightClickItem(PlayerInteractEvent.RightClickItem event) {
+        onPlayerInteract(event);
+    }
+
+    @SubscribeEvent
+    public static void onRightClickEmpty(PlayerInteractEvent.RightClickEmpty event) {
+        onPlayerInteract(event);
+    }
+
+    @SubscribeEvent
+    public static void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
+        onPlayerInteract(event);
+    }
+
+    @SubscribeEvent
+    public static void onEntityInteractSpecific(PlayerInteractEvent.EntityInteractSpecific event) {
+        onPlayerInteract(event);
+    }
+
+    private static void onPlayerInteract(PlayerInteractEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer owner)) {
             return;
         }
