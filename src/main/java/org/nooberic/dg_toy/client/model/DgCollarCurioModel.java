@@ -49,5 +49,6 @@ public class DgCollarCurioModel extends HumanoidModel<HumanoidRenderState> {
 
     @Override
     public void setupAnim(HumanoidRenderState state) {
+        super.setupAnim(state);
     }
 }

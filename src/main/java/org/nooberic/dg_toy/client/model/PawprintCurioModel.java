@@ -30,15 +30,15 @@ public class PawprintCurioModel extends HumanoidModel<HumanoidRenderState> {
         PartDefinition head = root.addOrReplaceChild("head", CubeListBuilder.create(), PartPose.ZERO);
         head.addOrReplaceChild("hat", CubeListBuilder.create(), PartPose.ZERO);
         root.addOrReplaceChild("body", CubeListBuilder.create(), PartPose.ZERO);
-        root.addOrReplaceChild("right_arm", CubeListBuilder.create(), PartPose.ZERO);
-        root.addOrReplaceChild("left_arm", CubeListBuilder.create(), PartPose.ZERO);
+        root.addOrReplaceChild("right_arm", CubeListBuilder.create(), PartPose.offset(-5.0F, 2.0F, 0.0F));
+        root.addOrReplaceChild("left_arm", CubeListBuilder.create(), PartPose.offset(5.0F, 2.0F, 0.0F));
         root.addOrReplaceChild("right_leg", CubeListBuilder.create(), PartPose.ZERO);
         root.addOrReplaceChild("left_leg", CubeListBuilder.create(), PartPose.ZERO);
 
         PartDefinition pawprint = root.addOrReplaceChild(
                 "pawprint",
                 CubeListBuilder.create(),
-                PartPose.offsetAndRotation(0.0F, 19.0F, 0.0F, 0.0F, -1.5708F, 1.5708F)
+                PartPose.offsetAndRotation(0.0F, 10.0F, 0.0F, 0.0F, -1.5708F, 1.5708F)
         );
         PartDefinition side = pawprint.addOrReplaceChild(
                 "side",
@@ -69,5 +69,6 @@ public class PawprintCurioModel extends HumanoidModel<HumanoidRenderState> {
 
     @Override
     public void setupAnim(HumanoidRenderState state) {
+        super.setupAnim(state);
     }
 }
