@@ -1,7 +1,6 @@
 # DG Toy — NeoForge 26.1.2 移植版
 
 `dg-toy` 的 **NeoForge 26.1.2** 移植版（原仓库 [NoobEric0746/dg-toy](https://github.com/NoobEric0746/dg-toy) 基于 Minecraft Forge 1.20.1）。
-本仓库由 MeadalFlute 维护，迁移原则是“最小代码入侵”：尽量通过构建脚本、元数据和兼容层适配，功能实现代码保持最小改动。
 
 ## 版本信息
 
