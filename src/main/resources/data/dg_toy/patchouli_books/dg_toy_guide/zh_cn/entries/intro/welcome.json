@@ -1,0 +1,16 @@
+{
+  "name": "欢迎来到 DGToy",
+  "icon": "dg_toy:dg_core",
+  "category": "dg_toy:intro",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "DGToy 是一个多人模组，向 Minecraft 中添加了 DG-Lab 主题的玩具。$(br2)它允许玩家使用各种受 DG-Lab 产品启发的设备互相交互。"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "本指南将向你介绍 DGToy 添加的所有物品和方块，以及它们的使用方法。$(br2)请使用左侧的分类来浏览不同的主题。"
+    }
+  ]
+}

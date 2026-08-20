@@ -1,0 +1,16 @@
+{
+  "name": "Welcome to DGToy",
+  "icon": "dg_toy:dg_core",
+  "category": "dg_toy:intro",
+  "sortnum": 0,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "DGToy is a multiplayer mod that adds DG-Lab themed toys to Minecraft.$(br2)It allows players to interact with each other using various devices inspired by DG-Lab products."
+    },
+    {
+      "type": "patchouli:text",
+      "text": "This guide will walk you through all the items and blocks added by DGToy, and how to use them.$(br2)Use the categories on the left to navigate through different topics."
+    }
+  ]
+}

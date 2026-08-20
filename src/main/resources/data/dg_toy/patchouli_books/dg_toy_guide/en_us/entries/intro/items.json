@@ -1,0 +1,20 @@
+{
+  "name": "Items Overview",
+  "icon": "dg_toy:powerbox",
+  "category": "dg_toy:intro",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "DGToy adds the following items:$(br2)$(li)$(item)Coyote Core $(0) - Basic crafting material$(br)$(li)$(item)Pawprint $(0) - Multi-mode detection device$(br)$(li)$(item)Coyote Powerbox $(0) - DG-Lab connection hub$(br)$(li)$(item)Coyote Collar $(0) - Wearable collar device"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(li)$(item)Collar Controller $(0) - Controls collar effects$(br)$(li)$(item)Redstone Controller $(0) - Redstone-based controller block$(br)$(li)$(item)Electrified Wire Netting $(0) - Electric fence block$(br)$(li)$(item)Remote Controller $(0) - Remote control for other players"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(li)$(item)DG Pressure Plate $(0) - Special pressure plate$(br)$(br)For detailed information about each item, please refer to their respective category pages."
+    }
+  ]
+}

@@ -53,5 +53,7 @@
   "screen.dg_toy.redstone_controller": "红石遥控器UI",
   "screen.dg_toy.pawprint": "爪印UI",
   "block.dg_toy.dg_pressure_plate": "郊狼压力板",
-  "item.dg_toy.dg_pressure_plate": "郊狼压力板"
+  "item.dg_toy.dg_pressure_plate": "郊狼压力板",
+  "item.dg_toy.dg_toy_guide": "DGToy 指南",
+  "item.dg_toy.dg_toy_guide.landing": "欢迎阅读 DGToy 指南！这本手册将帮助你了解模组中的所有物品和设备。"
 }

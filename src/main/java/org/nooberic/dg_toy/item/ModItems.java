@@ -23,6 +23,7 @@ public final class ModItems {
     public static final RegistryObject<Item> REMOTE_CONTROL = ITEMS.register("remote_control", RemoteControlItem::new);
     public static final RegistryObject<Item> DG_PRESSURE_PLATE = ITEMS.register("dg_pressure_plate", () ->
             new BlockItem(ModBlocks.DG_PRESSURE_PLATE.get(), new Item.Properties()));
+    public static final RegistryObject<Item> DG_TOY_GUIDE = ITEMS.register("dg_toy_guide", ModGuideBookItem::new);
 
     private ModItems() {
     }

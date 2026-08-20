@@ -1,0 +1,20 @@
+{
+  "name": "物品总览",
+  "icon": "dg_toy:powerbox",
+  "category": "dg_toy:intro",
+  "sortnum": 1,
+  "pages": [
+    {
+      "type": "patchouli:text",
+      "text": "DGToy 添加了以下物品：$(br2)$(li)$(item)郊狼核心 $(0) - 基础合成材料$(br)$(li)$(item)爪印 $(0) - 多模式检测设备$(br)$(li)$(item)郊狼主机 $(0) - DG-Lab 连接中枢$(br)$(li)$(item)郊狼项圈 $(0) - 可穿戴项圈设备"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(li)$(item)项圈控制器 $(0) - 控制项圈效果$(br)$(li)$(item)红石遥控器 $(0) - 基于红石的控制器方块$(br)$(li)$(item)电网 $(0) - 电击栅栏方块$(br)$(li)$(item)遥控器 $(0) - 远程控制其他玩家"
+    },
+    {
+      "type": "patchouli:text",
+      "text": "$(li)$(item)DG压力板 $(0) - 特殊压力板$(br)$(br)关于每个物品的详细信息，请参考各自的分类页面。"
+    }
+  ]
+}
