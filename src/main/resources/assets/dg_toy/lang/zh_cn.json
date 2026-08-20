@@ -61,5 +61,6 @@
   "item.dg_toy.pawprint.desc": "根据玩家行为自动惩罚玩家",
   "item.dg_toy.redstone_controller.desc": "通过红石信号来自动惩罚玩家",
   "item.dg_toy.dg_pressure_plate.desc": "只有连接了郊狼设备的人才能激活此压力板",
-  "item.dg_toy.dg_toy_guide.desc": "还没做好请忽略"
+  "item.dg_toy.dg_toy_guide.desc": "还没做好请忽略",
+  "enchantment.dg_toy.electric_shock": "电击附加"
 }

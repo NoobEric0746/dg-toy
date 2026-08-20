@@ -61,5 +61,6 @@
   "item.dg_toy.pawprint.desc": "Automatically punishes players based on their behavior",
   "item.dg_toy.redstone_controller.desc": "Automatically punishes players via redstone signals",
   "item.dg_toy.dg_pressure_plate.desc": "Only players connected to a Coyote device can activate this pressure plate",
-  "item.dg_toy.dg_toy_guide.desc": "Not finished yet, please ignore"
+  "item.dg_toy.dg_toy_guide.desc": "Not finished yet, please ignore",
+  "enchantment.dg_toy.electric_shock": "Shock Aspect"
 }

@@ -5,6 +5,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.EnchantedBookItem;
+import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.InterModComms;
@@ -28,6 +30,7 @@ import org.nooberic.dg_toy.client.PowerboxCurioRenderer;
 import org.nooberic.dg_toy.block.ModBlocks;
 import org.nooberic.dg_toy.block.entity.ModBlockEntities;
 import org.nooberic.dg_toy.config.DgToyConfig;
+import org.nooberic.dg_toy.enchantment.ModEnchantments;
 import org.nooberic.dg_toy.item.ModItems;
 import org.nooberic.dg_toy.network.DgToyNetworking;
 import org.nooberic.dg_toy.pawprint.PawprintRules;
@@ -54,6 +57,8 @@ public class Dg_toy {
                 output.accept(ModItems.DG_CORE.get());
                 output.accept(ModItems.REMOTE_CONTROL.get());
                 output.accept(ModItems.DG_PRESSURE_PLATE.get());
+                output.accept(EnchantedBookItem.createForEnchantment(new EnchantmentInstance(
+                        ModEnchantments.ELECTRIC_SHOCK.get(), ModEnchantments.ELECTRIC_SHOCK.get().getMaxLevel())));
                 output.accept(ModItems.DG_TOY_GUIDE.get());
             })
             .build());
@@ -72,6 +77,7 @@ public class Dg_toy {
         });
 
         ModBlocks.BLOCKS.register(modEventBus);
+        ModEnchantments.ENCHANTMENTS.register(modEventBus);
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus);
         CREATIVE_MODE_TABS.register(modEventBus);
