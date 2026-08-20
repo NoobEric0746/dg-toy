@@ -237,7 +237,6 @@ public class RemoteControlItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.dg_toy.remote_control.desc"));
         String boundPlayerName = getBoundPlayerName(stack);
         if (boundPlayerName != null) {
             tooltip.add(Component.translatable("item.dg_toy.remote_control.bound_player", Component.literal(boundPlayerName)));

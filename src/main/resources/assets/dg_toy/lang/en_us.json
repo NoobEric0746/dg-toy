@@ -55,5 +55,11 @@
   "block.dg_toy.dg_pressure_plate": "Coyote Pressure Plate",
   "item.dg_toy.dg_pressure_plate": "Coyote Pressure Plate",
   "item.dg_toy.dg_toy_guide": "DGToy Guide",
-  "item.dg_toy.dg_toy_guide.landing": "Welcome to the DGToy Guide! This book will help you understand all the items and devices in the mod."
+  "item.dg_toy.dg_toy_guide.landing": "Welcome to the DGToy Guide! This book will help you understand all the items and devices in the mod.",
+  "item.dg_toy.electrified_wire_netting.desc": "Conveniently shocks other players who step on it",
+  "item.dg_toy.dg_core.desc": "The base material for crafting items in this mod",
+  "item.dg_toy.pawprint.desc": "Automatically punishes players based on their behavior",
+  "item.dg_toy.redstone_controller.desc": "Automatically punishes players via redstone signals",
+  "item.dg_toy.dg_pressure_plate.desc": "Only players connected to a Coyote device can activate this pressure plate",
+  "item.dg_toy.dg_toy_guide.desc": "Not finished yet, please ignore"
 }

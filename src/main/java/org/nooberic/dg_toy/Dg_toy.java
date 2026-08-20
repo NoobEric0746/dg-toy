@@ -22,6 +22,7 @@ import net.minecraftforge.registries.RegistryObject;
 import top.theillusivec4.curios.api.SlotTypeMessage;
 import org.nooberic.dg_toy.client.DgCollarCurioRenderer;
 import org.nooberic.dg_toy.client.ModClientEvents;
+import org.nooberic.dg_toy.client.ModItemTooltips;
 import org.nooberic.dg_toy.client.PawprintCurioRenderer;
 import org.nooberic.dg_toy.client.PowerboxCurioRenderer;
 import org.nooberic.dg_toy.block.ModBlocks;
@@ -67,6 +68,7 @@ public class Dg_toy {
             PawprintCurioRenderer.register(modEventBus);
             DgCollarCurioRenderer.register(modEventBus);
             ModClientEvents.register(modEventBus);
+            ModItemTooltips.register();
         });
 
         ModBlocks.BLOCKS.register(modEventBus);
