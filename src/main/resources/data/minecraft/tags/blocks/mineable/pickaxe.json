@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "dg_toy:dg_beacon",
-    "dg_toy:redstone_controller"
+    "dg_toy:redstone_controller",
+    "dg_toy:electrified_wire_netting"
   ]
 }

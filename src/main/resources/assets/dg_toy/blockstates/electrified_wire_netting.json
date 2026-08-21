@@ -1,7 +1,55 @@
 {
   "variants": {
-    "": {
+    "disguise=0": {
       "model": "dg_toy:block/electrified_wire_netting"
+    },
+    "disguise=1": {
+      "model": "minecraft:block/white_carpet"
+    },
+    "disguise=2": {
+      "model": "minecraft:block/orange_carpet"
+    },
+    "disguise=3": {
+      "model": "minecraft:block/magenta_carpet"
+    },
+    "disguise=4": {
+      "model": "minecraft:block/light_blue_carpet"
+    },
+    "disguise=5": {
+      "model": "minecraft:block/yellow_carpet"
+    },
+    "disguise=6": {
+      "model": "minecraft:block/lime_carpet"
+    },
+    "disguise=7": {
+      "model": "minecraft:block/pink_carpet"
+    },
+    "disguise=8": {
+      "model": "minecraft:block/gray_carpet"
+    },
+    "disguise=9": {
+      "model": "minecraft:block/light_gray_carpet"
+    },
+    "disguise=10": {
+      "model": "minecraft:block/cyan_carpet"
+    },
+    "disguise=11": {
+      "model": "minecraft:block/purple_carpet"
+    },
+    "disguise=12": {
+      "model": "minecraft:block/blue_carpet"
+    },
+    "disguise=13": {
+      "model": "minecraft:block/brown_carpet"
+    },
+    "disguise=14": {
+      "model": "minecraft:block/green_carpet"
+    },
+    "disguise=15": {
+      "model": "minecraft:block/red_carpet"
+    },
+    "disguise=16": {
+      "model": "minecraft:block/black_carpet"
     }
   }
 }
