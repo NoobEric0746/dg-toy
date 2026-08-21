@@ -2,6 +2,7 @@ package org.nooberic.dg_toy.block;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
@@ -17,6 +18,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.AABB;
 import org.nooberic.dg_toy.server.PlayerConnectionSyncManager;
+import org.nooberic.dg_toy.server.RemoteControlStateHelper;
 
 import java.util.List;
 
@@ -60,7 +62,9 @@ public class DgPressurePlateBlock extends PressurePlateBlock {
         List<Player> players = level.getEntitiesOfClass(Player.class, aabb);
 
         for (Player player : players) {
-            if (!player.isIgnoringBlockTriggers()
+            if (player instanceof ServerPlayer serverPlayer
+                    && !player.isIgnoringBlockTriggers()
+                    && RemoteControlStateHelper.hasEquippedPowerbox(serverPlayer)
                     && PlayerConnectionSyncManager.isConnected(player.getUUID())) {
                 return 15;
             }
