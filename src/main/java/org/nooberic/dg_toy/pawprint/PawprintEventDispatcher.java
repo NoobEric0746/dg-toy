@@ -6,6 +6,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.ServerChatEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -90,6 +91,17 @@ public final class PawprintEventDispatcher {
         }
 
         for (BasePawprintRuleHandler<LivingHurtEvent> handler : PawprintRuleRegistry.getHandlers(LivingHurtEvent.class)) {
+            handler.handle(owner, event);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerDeath(LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer owner)) {
+            return;
+        }
+
+        for (BasePawprintRuleHandler<LivingDeathEvent> handler : PawprintRuleRegistry.getHandlers(LivingDeathEvent.class)) {
             handler.handle(owner, event);
         }
     }

@@ -195,6 +195,7 @@ new PawprintEffect(channel, strength, hardMode, pulseId, duration)
 | `prohibit_sprinting` | 禁止疾跑 | `PlayerTickEvent` | 玩家处于疾跑状态。 | 使用当前爪印强度与硬/软模式、`const`、1 秒；冷却当前为 25 tick。 |
 | `player_hurt_shock` | 受伤电击 | `LivingHurtEvent` | 玩家受到正数伤害。 | channel 3、强度按伤害量从当前爪印设置线性升至设备强度上限、当前硬/软模式、`chaos`、1 秒；20 点伤害及以上使用上限。 |
 | `player_hurt_fixed_shock` | 受伤固定电击 | `LivingHurtEvent` | 玩家受到正数伤害。 | 使用当前爪印强度与硬/软模式、当前爪印通道、`chaos`、1 秒；与伤害量无关。 |
+| `player_death_shock` | 死亡电击 | `LivingDeathEvent` | 玩家死亡。 | channel 为当前爪印通道、强度 100、软模式、`const`、2 秒。 |
 | `prohibit_attack` | 禁止攻击 | `AttackEntityEvent` | 玩家攻击生物。 | 使用当前爪印强度与硬/软模式、`chaos`、1 秒。 |
 | `prohibit_interaction` | 禁止交互 | `PlayerInteractEvent` | 玩家右键方块、实体、物品或空中。 | 使用当前爪印强度与硬/软模式、`chaos`、1 秒。 |
 | `receive_channel_a` | 接收频道 A | `RedstoneControllerActivatedEvent` | 红石遥控器的频率与规则设置的“接收频道 A”一致，且事件通道与爪印通道有交集。 | 使用交集通道及事件中的强度、硬/软模式、波形与持续时间。 |
